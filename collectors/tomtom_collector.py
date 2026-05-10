@@ -93,10 +93,9 @@ class TomTomCollector:
             return None
         
         try:
-            # TomTom Traffic Flow API expects zoom level 20 for point-based queries
+            # TomTom Traffic Flow API: zoom level is in the URL path, not a query param
             params = {
-                'point': f'{lat},{lon}',
-                'zoom': '20'
+                'point': f'{lat},{lon}'
             }
             
             response = make_request(
