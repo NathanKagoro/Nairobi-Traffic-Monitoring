@@ -6,6 +6,7 @@ import requests
 import time
 import logging
 from typing import Optional, Dict, Any
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -110,8 +111,11 @@ def parse_traffic_response(
         if segment.get('roadClosure'):
             road_closure = 1
         
+        # Use current UTC timestamp (TomTom response doesn't provide processedTime)
+        timestamp = datetime.now(timezone.utc).isoformat()
+        
         snapshot = {
-            'timestamp': response.get('processedTime'),
+            'timestamp': timestamp,
             'point_name': point_name,
             'latitude': latitude,
             'longitude': longitude,
