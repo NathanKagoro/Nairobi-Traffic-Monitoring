@@ -1,6 +1,8 @@
-# Dar es Salaam Traffic Monitoring System
+# Nairobi Traffic Monitoring System
 
-A lightweight, Python-based traffic data collection pipeline for East African urban monitoring. Collects traffic data from TomTom API for 50 strategic monitoring points in Dar es Salaam every 30 minutes.
+A lightweight, Python-based traffic data collection pipeline for East African urban monitoring. Collects traffic data from TomTom API for 51 strategic monitoring points in Nairobi, Kenya every 30 minutes.
+
+> **Note on Project Scope**: This project was originally designed for Dar es Salaam, Tanzania. However, TomTom's Traffic Flow API does not provide coverage in Tanzania or Uganda. The monitoring points were pivoted to Nairobi, Kenya, which has full TomTom traffic coverage. For more information on coverage limitations and alternative data sources for Dar es Salaam and Uganda, see [Future Directions](#future-directions) below.
 
 ## Architecture
 
@@ -106,24 +108,27 @@ Collection will start automatically every 30 minutes. Monitor runs in:
 
 ## Monitoring Points
 
-**50 strategic locations covering:**
-- Major intersections (congestion hotspots)
-- Bridges (bottlenecks)
-- CBD corridors (rush-hour analysis)
-- Highway entry points (flow monitoring)
-- Flood-prone roads (rainfall impact analysis)
+**51 strategic locations covering Nairobi:**
+- CBD corridors (Tom Mboya St, Dedan Kimathi Ave, Kenyatta Ave)
+- Major highways (Southern Bypass, Eastern Bypass, Northern Bypass, Thika Road)
+- Airport corridor (JKIA approaches)
+- Commercial zones (Westlands, Gigiri, Upper Hill)
+- Residential areas (Karen, Langata, Parklands, Muthaiga, Kilimani)
+- Industrial zones (Industrial Area, Dandora, Embakasi)
+- Key institutions (University of Nairobi, Kenyatta National Hospital)
+- Outer ring road segments
 
 **Categories:**
-- `major_intersection`: Peak traffic areas
-- `bridge`: Bottleneck points
 - `cbd_corridor`: City center routes
-- `highway`: Ring Road sectors
-- `flood_prone`: Rainfall-sensitive areas
-- `port`: Port access roads
-- `university`: University routes
-- `commercial`: Market/commercial zones
+- `major_intersection`: Peak traffic areas
+- `highway`: Bypass and major roads
+- `main_road`: Secondary arterial roads
+- `commercial`: Business/commercial zones
 - `residential`: Residential areas
 - `industrial`: Industrial zones
+- `airport`: Airport access points
+- `university`: University routes
+- `healthcare`: Hospital access roads
 
 Configured in `config/monitored_points.json`
 
@@ -195,6 +200,52 @@ ORDER BY avg_speed ASC;
 - TomTom free tier: ~2,500 requests/day
 - Current usage: ~2,400 requests/day (within free tier)
 - Supabase: Free tier (adequate)
+
+## Coverage & Limitations
+
+### Why Nairobi, Not Dar es Salaam?
+
+TomTom's Traffic Flow API does **not** cover Tanzania or Uganda. This is due to insufficient probe vehicle data (GPS from navigation app users) in these countries. The following coverage applies in East Africa:
+
+| Country | TomTom Coverage | HERE Maps Coverage |
+|---------|-----------------|-------------------|
+| **Kenya** | ✅ (Nairobi) | ✅ (Limited) |
+| **Tanzania** | ❌ | ❌ |
+| **Uganda** | ❌ | ❌ |
+
+**Other Free/Paid Options Evaluated:**
+- HERE Maps Traffic API: No Tanzania/Uganda coverage
+- Mapbox: No East Africa traffic data
+- Google Maps: No free tier for traffic flow
+- Uber Movement: Archived (no longer updated for Dar es Salaam)
+
+## Future Directions
+
+### Option 1: Pilot Alternative Data Sources for Dar es Salaam & Uganda
+
+**OpenStreetMap-based collection:**
+- Use Overpass API to extract road network and historical speeds
+- Combine with manual traffic surveys or academic datasets
+- No real-time data, but cheaper and locally independent
+
+**Crowdsourced GPS data:**
+- Collect anonymized GPS traces from dala-dala (matatu) fleets
+- Build local speed profiles without relying on external APIs
+- Fits the East African research context better
+
+### Option 2: Academic Partnerships
+
+UDSM and international urban mobility research teams (World Bank, UN-Habitat) have published Dar es Salaam traffic datasets:
+- Manual traffic counts at strategic intersections
+- Could seed a local database
+- Combine with progressive real-time collection infrastructure
+
+### Option 3: Expand to Other East African Cities
+
+Once the Nairobi pipeline is stable (2-4 weeks of data):
+- Add Kigali, Rwanda (TomTom + HERE coverage unclear, needs verification)
+- Add other Kenyan cities (Mombasa, Kisumu)
+- Establish regional comparison baseline
 
 ## Future Enhancements
 
