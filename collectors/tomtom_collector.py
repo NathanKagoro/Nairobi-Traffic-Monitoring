@@ -14,7 +14,7 @@ from utils.time_helpers import get_utc_now_iso
 logger = logging.getLogger(__name__)
 
 # TomTom API endpoint
-TOMTOM_TRAFFIC_FLOW_URL = "https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/20/json"
+TOMTOM_TRAFFIC_FLOW_URL = "https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json"
 
 
 class TomTomCollector:
