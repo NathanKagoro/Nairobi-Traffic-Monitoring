@@ -54,7 +54,7 @@ def make_request(
                 time.sleep(retry_delay)
                 continue
             else:
-                logger.error(f"HTTP error {response.status_code}: {e}")
+                logger.error(f"HTTP error {response.status_code}: {e} | Response: {response.text[:500]}")
                 return None
                 
         except Exception as e:
