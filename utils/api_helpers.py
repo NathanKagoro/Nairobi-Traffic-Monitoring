@@ -89,8 +89,10 @@ def parse_traffic_response(
     """
     try:
         # TomTom Traffic Flow API returns data in flowSegmentData array
+        logger.debug(f"Full response for {point_name}: {response}")
+        
         if 'flowSegmentData' not in response or not response['flowSegmentData']:
-            logger.warning(f"No flow segment data for {point_name}")
+            logger.warning(f"No flow segment data for {point_name}. Response: {response}")
             return None
         
         segment = response['flowSegmentData'][0]
