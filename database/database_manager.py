@@ -34,8 +34,15 @@ class DatabaseManager:
             bool: True if successful, False otherwise
         """
         try:
-            project_id = self.supabase_url.split("https://")[1].split(".supabase.co")[0]
-            conn_string = f"postgresql://postgres:{self.supabase_key}@db.{project_id}.supabase.co:5432/postgres"
+            # Extract project ID from URL
+            if "supabase.co" in self.supabase_url:
+                project_id = self.supabase_url.replace("https://", "").replace(".supabase.co", "")
+            else:
+                logger.error("Invalid SUPABASE_URL format")
+                return False
+            
+            # Build connection string with SSL requirement for Supabase
+            conn_string = f"postgresql://postgres:{self.supabase_key}@db.{project_id}.supabase.co:5432/postgres?sslmode=require"
             
             self.connection = psycopg2.connect(conn_string)
             logger.info("Database connection established")

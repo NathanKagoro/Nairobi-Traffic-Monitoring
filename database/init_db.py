@@ -14,24 +14,26 @@ def init_database(supabase_url: str, supabase_key: str) -> bool:
     Creates the traffic_snapshots table if it doesn't exist.
     
     Args:
-        supabase_url: Supabase project URL
-        supabase_key: Supabase API key
+        supabase_url: Supabase project URL (https://xxxxx.supabase.co)
+        supabase_key: Supabase service_role key
         
     Returns:
         bool: True if successful, False otherwise
     """
     try:
-        # Parse Supabase URL to get connection parameters
-        # Supabase URL format: https://[project-id].supabase.co
-        # Connection string for psycopg2:
-        # postgresql://postgres:[password]@db.[project-id].supabase.co:5432/postgres
+        # Extract project ID from URL (https://uvplijpdnimjhjtlvklk.supabase.co -> uvplijpdnimjhjtlvklk)
+        if "supabase.co" in supabase_url:
+            # Handle both https://xxx.supabase.co and xxx.supabase.co formats
+            project_id = supabase_url.replace("https://", "").replace(".supabase.co", "")
+        else:
+            logger.error("Invalid SUPABASE_URL format")
+            return False
         
-        # Extract project ID from URL
-        project_id = supabase_url.split("https://")[1].split(".supabase.co")[0]
+        # Build connection string for Supabase
+        # Format: postgresql://postgres:[service_role_key]@db.[project-id].supabase.co:5432/postgres
+        conn_string = f"postgresql://postgres:{supabase_key}@db.{project_id}.supabase.co:5432/postgres?sslmode=require"
         
-        # Supabase uses postgres user with the key as password
-        conn_string = f"postgresql://postgres:{supabase_key}@db.{project_id}.supabase.co:5432/postgres"
-        
+        logger.info(f"Connecting to Supabase project: {project_id}")
         conn = psycopg2.connect(conn_string)
         cursor = conn.cursor()
         
