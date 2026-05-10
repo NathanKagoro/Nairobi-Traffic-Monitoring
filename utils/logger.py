@@ -7,6 +7,7 @@ from pathlib import Path
 from config.settings import LOG_LEVEL
 
 
+# Build a stdout logger once and avoid duplicate handlers on repeated imports.
 def setup_logger(name: str = None) -> logging.Logger:
     """
     Configure and return a logger instance.
@@ -18,6 +19,7 @@ def setup_logger(name: str = None) -> logging.Logger:
         Configured logger instance
     """
     logger = logging.getLogger(name)
+    # LOG_LEVEL is a string in config; getattr maps it to logging.INFO/DEBUG/etc.
     logger.setLevel(getattr(logging, LOG_LEVEL))
     
     # Console handler

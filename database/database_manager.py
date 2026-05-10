@@ -5,7 +5,7 @@ This avoids firewall/port issues with GitHub Actions runners.
 """
 import logging
 import requests
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 class DatabaseManager:
     """Manages insert and query operations via Supabase REST API."""
 
+    # Prepare auth headers once so every request uses consistent credentials.
     def __init__(self, supabase_url: str, supabase_key: str):
         """
         Initialize database manager.
@@ -31,6 +32,7 @@ class DatabaseManager:
             "Prefer": "return=minimal",
         }
 
+    # Sanity check that the REST endpoint is reachable before write operations.
     def connect(self) -> bool:
         """
         Verify Supabase REST API is reachable by making a lightweight HEAD request.
@@ -51,10 +53,12 @@ class DatabaseManager:
             logger.error(f"Failed to reach Supabase API: {e}")
             return False
 
+    # REST transport is stateless, so there is no live connection to tear down.
     def close(self):
         """No-op — REST API has no persistent connection to close."""
         pass
 
+    # Batch insert snapshots in one request to reduce overhead and partial failures.
     def bulk_insert(self, snapshots: List[Dict]) -> int:
         """
         Insert multiple traffic snapshots via Supabase REST API.
@@ -99,39 +103,3 @@ class DatabaseManager:
             logger.error(f"Failed to bulk insert snapshots: {e}")
             return 0
 
-    def insert_snapshot(self, snapshot: Dict) -> bool:
-        """Insert a single snapshot."""
-        return self.bulk_insert([snapshot]) == 1
-
-    def query_recent(self, point_name: Optional[str] = None,
-                     limit: int = 100) -> List[Dict]:
-        """
-        Query recent traffic snapshots via REST API.
-
-        Args:
-            point_name: Optional filter by point name
-            limit: Maximum rows to return
-
-        Returns:
-            List of snapshot dictionaries
-        """
-        try:
-            url = f"{self.base_url}/rest/v1/traffic_snapshots"
-            params = {
-                "order": "timestamp.desc",
-                "limit": limit,
-            }
-            if point_name:
-                params["point_name"] = f"eq.{point_name}"
-
-            headers = {**self.headers, "Prefer": "return=representation"}
-            response = requests.get(url, headers=headers, params=params, timeout=10)
-
-            if response.status_code == 200:
-                return response.json()
-            logger.error(f"Query failed [{response.status_code}]: {response.text}")
-            return []
-
-        except Exception as e:
-            logger.error(f"Failed to query snapshots: {e}")
-            return []

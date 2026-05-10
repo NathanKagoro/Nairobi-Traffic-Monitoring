@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 logger = logging.getLogger(__name__)
 
 
+# Perform resilient HTTP GET with retry behavior tuned for transient failures.
 def make_request(
     url: str,
     params: Dict[str, Any],
@@ -33,10 +34,12 @@ def make_request(
     Returns:
         JSON response or None if all retries fail
     """
+    # Inject auth key directly into query params expected by TomTom endpoints.
     params['key'] = api_key
     
     for attempt in range(max_retries):
         try:
+            # raise_for_status() converts non-2xx responses into HTTPError branches below.
             response = requests.get(url, params=params, timeout=timeout)
             response.raise_for_status()
             
@@ -50,6 +53,7 @@ def make_request(
             logger.warning(f"Connection error (attempt {attempt + 1}/{max_retries})")
             
         except requests.exceptions.HTTPError as e:
+            # 429 is explicitly retried; other HTTP failures are returned to caller as None.
             if response.status_code == 429:  # Rate limit
                 logger.warning(f"Rate limited. Waiting {retry_delay}s before retry...")
                 time.sleep(retry_delay)
@@ -70,6 +74,7 @@ def make_request(
     return None
 
 
+# Transform provider payload into the normalized snapshot schema used by storage.
 def parse_traffic_response(
     response: Dict[str, Any],
     point_name: str,

@@ -29,6 +29,7 @@ CREATE INDEX IF NOT EXISTS idx_traffic_point_name ON traffic_snapshots(point_nam
 """
 
 
+# Validate table availability and print one-time SQL only when setup is missing.
 def init_database(supabase_url: str, supabase_key: str) -> bool:
     """
     Verify the traffic_snapshots table exists via Supabase REST API.
@@ -51,10 +52,12 @@ def init_database(supabase_url: str, supabase_key: str) -> bool:
         url = f"{base_url}/rest/v1/traffic_snapshots?limit=1"
         response = requests.get(url, headers=headers, timeout=10)
 
+        # 200 confirms REST access and that table permissions are correct.
         if response.status_code == 200:
             logger.info("traffic_snapshots table exists and is accessible")
             return True
 
+        # 404 typically means schema/table does not exist yet for this project.
         if response.status_code == 404:
             logger.error(
                 "Table 'traffic_snapshots' does not exist in Supabase.\n"

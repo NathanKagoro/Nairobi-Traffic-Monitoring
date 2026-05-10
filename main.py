@@ -2,16 +2,13 @@
 Main entry point for Dar Traffic Monitoring system.
 Provides collect() and init() functions for GitHub Actions and local testing.
 """
-import os
 import sys
 import logging
-from typing import Callable
 
 from config.settings import (
     TOMTOM_API_KEY,
     SUPABASE_URL,
     SUPABASE_KEY,
-    COLLECTION_INTERVAL_MINUTES,
 )
 from utils.logger import setup_logger
 from utils.time_helpers import get_utc_now_string
@@ -28,6 +25,7 @@ logger = setup_logger(__name__)
 
 
 def validate_config() -> bool:
+    # Guardrail: fail fast when secrets are missing or still set to placeholders.
     """
     Validate that all required configuration is present.
     
@@ -50,6 +48,7 @@ def validate_config() -> bool:
 
 
 def init() -> bool:
+    # One-time setup helper for creating/verifying the storage table.
     """
     Initialize database schema.
     Run once before first collection.
@@ -73,6 +72,7 @@ def init() -> bool:
 
 
 def collect() -> bool:
+    # End-to-end collection cycle: fetch snapshots, then persist them.
     """
     Execute a single traffic collection cycle.
     Collects from all monitoring points and stores in database.
@@ -128,6 +128,7 @@ def collect() -> bool:
 
 
 def main():
+    # Small CLI dispatcher used by both local runs and CI workflow commands.
     """
     CLI entry point.
     Usage:

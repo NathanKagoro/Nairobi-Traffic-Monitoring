@@ -5,11 +5,9 @@ Queries TomTom Traffic Flow API and collects traffic data.
 import json
 import logging
 from typing import List, Dict, Optional
-from pathlib import Path
 
 from config.settings import MONITORED_POINTS_FILE
 from utils.api_helpers import make_request, parse_traffic_response
-from utils.time_helpers import get_utc_now_iso
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +18,7 @@ TOMTOM_TRAFFIC_FLOW_URL = "https://api.tomtom.com/traffic/services/4/flowSegment
 class TomTomCollector:
     """Collects traffic data from TomTom API."""
     
+    # Build an API client with retry controls and load all monitored points once.
     def __init__(self, api_key: str, timeout: int = 10, max_retries: int = 3):
         """
         Initialize collector.
@@ -34,6 +33,7 @@ class TomTomCollector:
         self.max_retries = max_retries
         self.monitored_points = self._load_points()
     
+    # Read point definitions from config and keep them in memory for the run.
     def _load_points(self) -> List[Dict]:
         """
         Load monitoring points from JSON file.
@@ -50,6 +50,7 @@ class TomTomCollector:
             logger.error(f"Failed to load monitoring points: {e}")
             return []
     
+    # Iterate through all configured points and return only valid snapshots.
     def collect_all(self) -> List[Dict]:
         """
         Collect traffic data for all monitoring points.
@@ -74,6 +75,7 @@ class TomTomCollector:
         logger.info(f"Collection complete: {successful} successful, {failed} failed")
         return snapshots
     
+    # Query one coordinate pair and normalize the result into snapshot schema.
     def _collect_point(self, point: Dict) -> Optional[Dict]:
         """
         Collect traffic data for a single point.
@@ -93,7 +95,7 @@ class TomTomCollector:
             return None
         
         try:
-            # TomTom Traffic Flow API: zoom level is in the URL path, not a query param
+            # TomTom Traffic Flow API expects zoom in the path; query only needs point.
             params = {
                 'point': f'{lat},{lon}'
             }
@@ -123,6 +125,7 @@ class TomTomCollector:
             logger.error(f"Error collecting point {name}: {e}")
             return None
     
+    # Lightweight helper used by logs/metrics in the main collection flow.
     def get_point_count(self) -> int:
         """Get total number of monitoring points."""
         return len(self.monitored_points)
