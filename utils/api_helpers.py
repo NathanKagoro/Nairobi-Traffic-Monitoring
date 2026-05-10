@@ -88,12 +88,12 @@ def parse_traffic_response(
         Normalized snapshot dictionary or None if parsing fails
     """
     try:
-        # TomTom Traffic Flow API returns data in flowSegmentData array
+        # TomTom Traffic Flow API returns data in flowSegmentData (dict, not array)
         if 'flowSegmentData' not in response or not response['flowSegmentData']:
             logger.error(f"No flow segment data for {point_name}. Full response: {response}")
             return None
         
-        segment = response['flowSegmentData'][0]
+        segment = response['flowSegmentData']
         
         current_speed = segment.get('currentSpeed')
         free_flow_speed = segment.get('freeFlowSpeed')
