@@ -89,10 +89,8 @@ def parse_traffic_response(
     """
     try:
         # TomTom Traffic Flow API returns data in flowSegmentData array
-        logger.debug(f"Full response for {point_name}: {response}")
-        
         if 'flowSegmentData' not in response or not response['flowSegmentData']:
-            logger.warning(f"No flow segment data for {point_name}. Response: {response}")
+            logger.error(f"No flow segment data for {point_name}. Full response: {response}")
             return None
         
         segment = response['flowSegmentData'][0]
@@ -128,7 +126,7 @@ def parse_traffic_response(
         return snapshot
         
     except KeyError as e:
-        logger.error(f"Missing expected field in response for {point_name}: {e}")
+        logger.error(f"Missing expected field in response for {point_name}: {e} | Full response: {response}")
         return None
     except Exception as e:
         logger.error(f"Error parsing response for {point_name}: {e}")
