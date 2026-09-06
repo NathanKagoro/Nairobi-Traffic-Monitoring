@@ -36,7 +36,11 @@ def setup_logger(name: str = None) -> logging.Logger:
     # Add handler if not already present
     if not logger.handlers:
         logger.addHandler(console_handler)
-    
+        # This logger now writes to stdout itself. Without this, records would
+        # also bubble up to the root handler installed by logging.basicConfig()
+        # and every line would appear twice in the GitHub Actions log.
+        logger.propagate = False
+
     return logger
 
 

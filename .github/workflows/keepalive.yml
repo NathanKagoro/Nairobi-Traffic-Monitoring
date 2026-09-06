@@ -1,0 +1,87 @@
+name: Keepalive
+
+# This is what stops collection from silently dying again.
+#
+# GitHub automatically disables scheduled workflows in a public repository
+# after 60 days with no repository activity. That is what happened here: the
+# last commit was 2026-05-10, so the collector was switched off around
+# 2026-07-09 without anything failing or erroring.
+#
+# This workflow runs weekly and does three things:
+#
+#   1. Pushes a dated heartbeat commit. Repository activity resets the 60-day
+#      timer, so the collector never reaches the cut-off.
+#   2. Re-enables the collection workflow through the Actions API, so the
+#      pipeline heals itself if it ever does get disabled.
+#   3. Checks that fresh rows are actually landing in Supabase, and fails the
+#      job if not, so a dead pipeline sends a notification instead of silence.
+
+on:
+  schedule:
+    # 06:17 UTC every Monday. Deliberately off the hour: GitHub sheds scheduled
+    # runs that bunch up at :00, and a dropped keepalive defeats the point.
+    - cron: '17 6 * * 1'
+
+  workflow_dispatch:
+
+permissions:
+  contents: write   # push the heartbeat commit
+  actions: write    # re-enable a disabled workflow
+
+concurrency:
+  group: keepalive
+  cancel-in-progress: false
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Record heartbeat
+        run: date -u +'%Y-%m-%dT%H:%M:%SZ' > .github/last-keepalive
+
+      - name: Commit and push heartbeat
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/last-keepalive
+          # A commit pushed with GITHUB_TOKEN deliberately does not trigger other
+          # workflows, so this cannot loop. [skip ci] is belt and braces.
+          if git diff --staged --quiet; then
+            echo "Heartbeat unchanged, nothing to commit"
+          else
+            git commit -m "chore: keepalive heartbeat [skip ci]"
+            git push
+          fi
+
+      - name: Re-enable the collection workflow if GitHub disabled it
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Idempotent: enabling an already-enabled workflow is a no-op. Never
+          # fail the job on this, the heartbeat above is the primary defence.
+          gh workflow enable collect-traffic.yml \
+            && echo "collect-traffic.yml is enabled" \
+            || echo "Could not toggle collect-traffic.yml (may already be enabled)"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify data is still arriving
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        # Fails the job (and notifies) if nothing has landed in 6 hours, which
+        # at a 30-minute cadence means roughly 12 consecutive missed cycles.
+        run: python main.py healthcheck --max-age-hours 6

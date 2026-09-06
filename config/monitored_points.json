@@ -1,54 +1,314 @@
 [
-  {"name": "Nairobi CBD - Tom Mboya St", "lat": -1.2879, "lon": 36.8324, "category": "cbd_corridor"},
-  {"name": "Kenyatta Avenue × Kimathi St", "lat": -1.2890, "lon": 36.8345, "category": "major_intersection"},
-  {"name": "Dedan Kimathi Ave - CBD", "lat": -1.2895, "lon": 36.8358, "category": "cbd_corridor"},
-  {"name": "University Way - CBD", "lat": -1.2920, "lon": 36.8380, "category": "main_road"},
-  {"name": "Haile Selassie Ave × Koinange St", "lat": -1.2850, "lon": 36.8290, "category": "major_intersection"},
-  {"name": "Mama Ngina St", "lat": -1.2882, "lon": 36.8410, "category": "cbd_corridor"},
-  {"name": "Moi Avenue - CBD", "lat": -1.2905, "lon": 36.8365, "category": "main_road"},
-  {"name": "Uhuru Park Access", "lat": -1.3010, "lon": 36.8220, "category": "main_road"},
-  {"name": "Westlands - Lenana Rd", "lat": -1.2623, "lon": 36.8062, "category": "commercial"},
-  {"name": "Westlands - Waiyaki Way", "lat": -1.2580, "lon": 36.8045, "category": "main_road"},
-  {"name": "Parklands - Limuru Rd", "lat": -1.2450, "lon": 36.7950, "category": "residential"},
-  {"name": "Gigiri - UN Avenue", "lat": -1.2352, "lon": 36.7788, "category": "commercial"},
-  {"name": "JKIA - Terminal 1 Approach", "lat": -1.3192, "lon": 36.9167, "category": "airport"},
-  {"name": "JKIA - Eastern Bypass Junction", "lat": -1.3250, "lon": 36.9180, "category": "highway"},
-  {"name": "Embakasi - Airport Rd", "lat": -1.3380, "lon": 36.9050, "category": "highway"},
-  {"name": "Nairobi South - Argwings Kodhek Rd", "lat": -1.3145, "lon": 36.8920, "category": "main_road"},
-  {"name": "Langata - Ngong Rd Approach", "lat": -1.3450, "lon": 36.7800, "category": "main_road"},
-  {"name": "Ngong Road - Kilimani", "lat": -1.3220, "lon": 36.7680, "category": "main_road"},
-  {"name": "Karen - Forest Edge", "lat": -1.3680, "lon": 36.7450, "category": "residential"},
-  {"name": "Langata Road - South C", "lat": -1.3550, "lon": 36.8050, "category": "residential"},
-  {"name": "Southern Bypass - Mombasa Rd Junction", "lat": -1.3480, "lon": 36.8650, "category": "highway"},
-  {"name": "Mombasa Rd - Eastleigh", "lat": -1.2850, "lon": 36.8750, "category": "highway"},
-  {"name": "Mombasa Rd - Makadara", "lat": -1.3050, "lon": 36.8880, "category": "highway"},
-  {"name": "Eastern Bypass - Upper Hill", "lat": -1.2950, "lon": 36.8950, "category": "highway"},
-  {"name": "Eastern Bypass - Pangani", "lat": -1.3180, "lon": 36.9020, "category": "highway"},
-  {"name": "Northern Bypass - Limuru Rd Junction", "lat": -1.2250, "lon": 36.8000, "category": "highway"},
-  {"name": "Northern Bypass - Forest Edge", "lat": -1.2100, "lon": 36.8200, "category": "highway"},
-  {"name": "Thika Road - Roysambu", "lat": -1.2000, "lon": 36.8350, "category": "highway"},
-  {"name": "Thika Road - Kahawa", "lat": -1.1850, "lon": 36.8420, "category": "highway"},
-  {"name": "University of Nairobi - Main Gate", "lat": -1.2698, "lon": 36.7480, "category": "university"},
-  {"name": "Kenyatta National Hospital - Access", "lat": -1.3015, "lon": 36.7562, "category": "healthcare"},
-  {"name": "Kikuyu Rd - Muthaiga", "lat": -1.2380, "lon": 36.7680, "category": "residential"},
-  {"name": "Muthaiga Rd - Runda", "lat": -1.2250, "lon": 36.7520, "category": "residential"},
-  {"name": "Lavington - Riverside Dr", "lat": -1.2950, "lon": 36.7850, "category": "residential"},
-  {"name": "Kilimani - Limuru Rd", "lat": -1.3090, "lon": 36.7680, "category": "residential"},
-  {"name": "Industrial Area - Lusaka Rd", "lat": -1.3380, "lon": 36.8420, "category": "industrial"},
-  {"name": "Industrial Area - Sirikwa Rd", "lat": -1.3320, "lon": 36.8280, "category": "industrial"},
-  {"name": "Dandora - Outer Ring Rd", "lat": -1.2800, "lon": 36.9150, "category": "residential"},
-  {"name": "Buruburu - Enterprise Rd", "lat": -1.3050, "lon": 36.9350, "category": "residential"},
-  {"name": "Umoja - Outer Ring Rd", "lat": -1.3220, "lon": 36.9280, "category": "residential"},
-  {"name": "Kasarani - Outer Ring Rd", "lat": -1.1950, "lon": 36.9080, "category": "residential"},
-  {"name": "Ruai - Outer Ring Rd", "lat": -1.2100, "lon": 36.9550, "category": "residential"},
-  {"name": "Valley Road - Estate", "lat": -1.3700, "lon": 36.8050, "category": "main_road"},
-  {"name": "Tamarind Grove - Ngong Hills", "lat": -1.3850, "lon": 36.7600, "category": "commercial"},
-  {"name": "Mbagathi Way - Ridgeways", "lat": -1.3450, "lon": 36.7950, "category": "main_road"},
-  {"name": "Ring Road - Nairobi Showground", "lat": -1.3180, "lon": 36.7750, "category": "highway"},
-  {"name": "Kipchoge Keino Stadium Approach", "lat": -1.3050, "lon": 36.7650, "category": "main_road"},
-  {"name": "Upper Hill - Limuru Rd Junction", "lat": -1.2850, "lon": 36.8820, "category": "main_road"},
-  {"name": "Hurlingam - Nairobi Showground", "lat": -1.3380, "lon": 36.7950, "category": "residential"},
-  {"name": "Nairobi West - Ojijo Rd", "lat": -1.3250, "lon": 36.7580, "category": "residential"},
-  {"name": "Chiromo Lane - Upper Hill", "lat": -1.2920, "lon": 36.8950, "category": "main_road"},
-  {"name": "Gitanga Rd - Ridgeways", "lat": -1.3380, "lon": 36.8150, "category": "residential"}
+  {
+    "name": "Prof. Wangari Maathai Road",
+    "lat": -1.27366,
+    "lon": 36.81331,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Murang'a Road",
+    "lat": -1.28085,
+    "lon": 36.82128,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Limuru Road",
+    "lat": -1.2747,
+    "lon": 36.82326,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Haile Selassie Avenue",
+    "lat": -1.29289,
+    "lon": 36.82017,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Moi Avenue",
+    "lat": -1.28465,
+    "lon": 36.82512,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Kenyatta Avenue",
+    "lat": -1.28674,
+    "lon": 36.8172,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Tom Mboya Street",
+    "lat": -1.28782,
+    "lon": 36.82756,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Kipande Road",
+    "lat": -1.27267,
+    "lon": 36.81518,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Dr. G.W. Griffin Road",
+    "lat": -1.27978,
+    "lon": 36.83303,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Ngara Road",
+    "lat": -1.27625,
+    "lon": 36.82646,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Racecourse Road",
+    "lat": -1.28682,
+    "lon": 36.83043,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Quarry Road",
+    "lat": -1.28312,
+    "lon": 36.83721,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Park Road",
+    "lat": -1.27767,
+    "lon": 36.83058,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Nairobi Expressway - CBD",
+    "lat": -1.27866,
+    "lon": 36.81404,
+    "category": "highway"
+  },
+  {
+    "name": "Thika Road - Roysambu",
+    "lat": -1.25786,
+    "lon": 36.85096,
+    "category": "highway"
+  },
+  {
+    "name": "Southern Bypass - Mugumo-ini",
+    "lat": -1.31812,
+    "lon": 36.78798,
+    "category": "highway"
+  },
+  {
+    "name": "Kangundo Road",
+    "lat": -1.27535,
+    "lon": 36.89086,
+    "category": "highway"
+  },
+  {
+    "name": "Mombasa Road",
+    "lat": -1.31372,
+    "lon": 36.83048,
+    "category": "highway"
+  },
+  {
+    "name": "Waiyaki Way",
+    "lat": -1.26287,
+    "lon": 36.80001,
+    "category": "highway"
+  },
+  {
+    "name": "Mombasa - Nairobi Road",
+    "lat": -1.35126,
+    "lon": 36.90548,
+    "category": "highway"
+  },
+  {
+    "name": "Kiambu Road",
+    "lat": -1.26006,
+    "lon": 36.84235,
+    "category": "highway"
+  },
+  {
+    "name": "Magadi Road",
+    "lat": -1.344,
+    "lon": 36.76639,
+    "category": "highway"
+  },
+  {
+    "name": "Uhuru Highway",
+    "lat": -1.30029,
+    "lon": 36.82417,
+    "category": "highway"
+  },
+  {
+    "name": "Chiromo Road",
+    "lat": -1.27161,
+    "lon": 36.80843,
+    "category": "highway"
+  },
+  {
+    "name": "Outer Ring Road",
+    "lat": -1.26504,
+    "lon": 36.87949,
+    "category": "main_road"
+  },
+  {
+    "name": "Langata Road",
+    "lat": -1.30798,
+    "lon": 36.81929,
+    "category": "main_road"
+  },
+  {
+    "name": "Eastern Bypass",
+    "lat": -1.30847,
+    "lon": 36.93252,
+    "category": "main_road"
+  },
+  {
+    "name": "Northern Bypass",
+    "lat": -1.2165,
+    "lon": 36.82342,
+    "category": "main_road"
+  },
+  {
+    "name": "Airport North Road",
+    "lat": -1.32943,
+    "lon": 36.89096,
+    "category": "main_road"
+  },
+  {
+    "name": "Airport South Road",
+    "lat": -1.32413,
+    "lon": 36.90022,
+    "category": "main_road"
+  },
+  {
+    "name": "Old Mombasa Road",
+    "lat": -1.33873,
+    "lon": 36.87438,
+    "category": "main_road"
+  },
+  {
+    "name": "Peponi Road",
+    "lat": -1.25574,
+    "lon": 36.80208,
+    "category": "main_road"
+  },
+  {
+    "name": "Kirawa Road",
+    "lat": -1.23369,
+    "lon": 36.77041,
+    "category": "main_road"
+  },
+  {
+    "name": "ICD Road",
+    "lat": -1.3308,
+    "lon": 36.869,
+    "category": "main_road"
+  },
+  {
+    "name": "Parklands Road",
+    "lat": -1.26738,
+    "lon": 36.81804,
+    "category": "main_road"
+  },
+  {
+    "name": "Ngong Road - Kilimani",
+    "lat": -1.29629,
+    "lon": 36.8084,
+    "category": "main_road"
+  },
+  {
+    "name": "Lower Kabete Road",
+    "lat": -1.25391,
+    "lon": 36.79223,
+    "category": "main_road"
+  },
+  {
+    "name": "Jogoo Road",
+    "lat": -1.29321,
+    "lon": 36.84727,
+    "category": "main_road"
+  },
+  {
+    "name": "Enterprise Road",
+    "lat": -1.3004,
+    "lon": 36.83729,
+    "category": "main_road"
+  },
+  {
+    "name": "Waiyaki Red Hill Link Road",
+    "lat": -1.25468,
+    "lon": 36.77527,
+    "category": "main_road"
+  },
+  {
+    "name": "Kamiti Road",
+    "lat": -1.21051,
+    "lon": 36.89357,
+    "category": "main_road"
+  },
+  {
+    "name": "Dagoretti Road",
+    "lat": -1.31926,
+    "lon": 36.70468,
+    "category": "main_road"
+  },
+  {
+    "name": "Kikuyu Road",
+    "lat": -1.28391,
+    "lon": 36.73113,
+    "category": "main_road"
+  },
+  {
+    "name": "Naivasha Road",
+    "lat": -1.29766,
+    "lon": 36.75696,
+    "category": "main_road"
+  },
+  {
+    "name": "Lang'ata Link Road",
+    "lat": -1.30329,
+    "lon": 36.78826,
+    "category": "main_road"
+  },
+  {
+    "name": "Thika Road - Roysambu (2)",
+    "lat": -1.24203,
+    "lon": 36.86868,
+    "category": "highway"
+  },
+  {
+    "name": "Thika Road - Kasarani",
+    "lat": -1.23228,
+    "lon": 36.87633,
+    "category": "highway"
+  },
+  {
+    "name": "Nairobi Expressway - Kilimani",
+    "lat": -1.25984,
+    "lon": 36.78706,
+    "category": "highway"
+  },
+  {
+    "name": "Nairobi Expressway - Imara Daima",
+    "lat": -1.32951,
+    "lon": 36.87477,
+    "category": "highway"
+  },
+  {
+    "name": "Southern Bypass - Waithaka",
+    "lat": -1.30275,
+    "lon": 36.70489,
+    "category": "highway"
+  },
+  {
+    "name": "Southern Bypass - Karen C",
+    "lat": -1.31629,
+    "lon": 36.73185,
+    "category": "highway"
+  },
+  {
+    "name": "Ngong Road - Karen",
+    "lat": -1.32827,
+    "lon": 36.68327,
+    "category": "main_road"
+  }
 ]

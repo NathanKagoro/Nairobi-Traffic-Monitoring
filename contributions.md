@@ -51,9 +51,24 @@ Recommended categories:
 
 Quality checks before opening a pull request:
 
-- Confirm coordinates map to real roads.
+- Confirm coordinates map to real roads: `python main.py validate-points`.
+  This reverse-geocodes every point against OpenStreetMap and exits non-zero
+  if any coordinate does not sit on the road its name claims. Do not skip it -
+  a wrong coordinate fails silently, because TomTom snaps to the nearest road
+  segment and returns a perfectly plausible reading for the wrong street.
 - Confirm points are distributed across the city, not clustered in one area.
 - Run one local collection cycle to verify parse and insert success.
+
+For a new city, prefer generating the list over typing it:
+
+```bash
+# Edit CITY_AREA / CITY_BBOX / CBD_BBOX / CITY_CENTRE for your city first
+python -m analysis.generate_points 52
+```
+
+This builds the point list from OpenStreetMap road geometry, so every
+coordinate is a node on a real, named road of a significant class, spread
+across the city and verified before it is written.
 
 ## 2) Replicate The Project In Your City
 
@@ -150,9 +165,11 @@ Before submitting:
 
 If you want more ideas, these are high-impact:
 
-1. City template generator for monitored_points.json.
+1. ~~City template generator for monitored_points.json~~ - done, see
+   `analysis/generate_points.py`.
 2. Provider coverage checker script before collection starts.
-3. Data completeness report (expected vs inserted snapshots per cycle).
+3. ~~Data completeness report (expected vs inserted snapshots per cycle)~~ -
+   done, see `python main.py audit`.
 4. Simple dashboard notebook for daily congestion trends.
 5. Automated anomaly flags for sudden speed drops.
 

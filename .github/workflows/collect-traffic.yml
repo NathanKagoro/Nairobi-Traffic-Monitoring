@@ -2,41 +2,54 @@ name: Collect Traffic Data
 
 on:
   schedule:
-    # Run every 30 minutes
-    - cron: '*/30 * * * *'
-  
+    # Run every 30 minutes, offset from the hour. GitHub's scheduler is
+    # best-effort and sheds load around :00, so runs booked exactly on the
+    # hour are the most likely to be dropped entirely.
+    - cron: '7,37 * * * *'
+
   # Allow manual trigger
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A late run must never overlap the next one: two collectors writing the same
+# cycle produces duplicate rows that quietly skew every later average.
+concurrency:
+  group: collect-traffic
+  cancel-in-progress: false
 
 jobs:
   collect-traffic:
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 15
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
+          cache: 'pip'
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      
+
       - name: Run traffic collection
         env:
           TOMTOM_API_KEY: ${{ secrets.TOMTOM_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: python main.py collect
-      
+
       - name: Log completion
         if: success()
         run: echo "Traffic collection completed successfully"
-      
+
       - name: Handle failure
         if: failure()
         run: echo "Traffic collection failed - check logs for details"

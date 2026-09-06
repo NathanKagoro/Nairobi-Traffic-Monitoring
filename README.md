@@ -1,6 +1,6 @@
 # Nairobi Traffic Monitoring System
 
-A lightweight, Python-based traffic data collection pipeline for East African urban monitoring. Collects traffic data from TomTom API for 51 strategic monitoring points in Nairobi, Kenya every 30 minutes.
+A lightweight, Python-based traffic data collection pipeline for East African urban monitoring. Collects traffic data from TomTom API for 52 strategic monitoring points in Nairobi, Kenya every 30 minutes.
 
 > **Note on Project Scope**: This project was originally designed for Dar es Salaam, Tanzania. However, TomTom's Traffic Flow API does not provide coverage in Tanzania or Uganda. The monitoring points were pivoted to Nairobi, Kenya, which has full TomTom traffic coverage. For more information on coverage limitations and alternative data sources for Dar es Salaam and Uganda, see [Future Directions](#future-directions) below.
 
@@ -108,7 +108,7 @@ Collection will start automatically every 30 minutes. Monitor runs in:
 
 ## Monitoring Points
 
-**51 strategic locations covering Nairobi:**
+**52 strategic locations covering Nairobi:**
 - CBD corridors (Tom Mboya St, Dedan Kimathi Ave, Kenyatta Ave)
 - Major highways (Southern Bypass, Eastern Bypass, Northern Bypass, Thika Road)
 - Airport corridor (JKIA approaches)
@@ -183,23 +183,118 @@ GROUP BY point_name
 ORDER BY avg_speed ASC;
 ```
 
+## Keeping Collection Alive
+
+GitHub **automatically disables scheduled workflows in a public repository
+after 60 days with no repository activity**, and it does so silently — no run
+fails, no job errors, the schedule simply stops firing. This is what stopped
+collection in July 2026, 60 days after the last commit on 2026-05-10.
+
+`.github/workflows/keepalive.yml` prevents a repeat. Weekly, it:
+
+1. Pushes a dated heartbeat commit to `.github/last-keepalive`, which resets
+   the 60-day inactivity timer before it can ever expire.
+2. Calls the Actions API to re-enable `collect-traffic.yml`, so the pipeline
+   recovers by itself if it is ever disabled anyway.
+3. Runs `python main.py healthcheck`, which **fails the job** if no new rows
+   have landed in 6 hours — turning a silent death into a notification.
+
+If collection has already stopped, restarting it takes both of these:
+
+- **Actions** tab → **Collect Traffic Data** → click **Enable workflow** on the
+  banner. A disabled schedule does not restart on its own, even after a push.
+- Push any commit, so the inactivity clock resets from today.
+
+## Data Quality Auditing
+
+```bash
+# Full report over everything collected so far
+python main.py audit
+
+# Last 30 days only, written to a file
+python main.py audit --days 30 --out report.md
+
+# Liveness probe - exits non-zero if nothing has landed in 6 hours
+python main.py healthcheck --max-age-hours 6
+```
+
+### Monitoring point integrity
+
+```bash
+# Check every configured coordinate against OpenStreetMap
+python main.py validate-points --out points.md
+
+# Regenerate the whole point list from OSM road geometry
+python -m analysis.generate_points 52
+```
+
+Coordinates typed by hand land in the wrong place, and the failure is silent:
+TomTom snaps any coordinate to its nearest road segment and returns a
+plausible reading for it, so a point labelled "Ngong Road" can spend months
+measuring a residential side street.
+
+`validate-points` reverse-geocodes each configured coordinate and reports
+`MATCH`, `AREA_ONLY` (right district, wrong road), `MISMATCH` or `OFF_AREA`.
+It exits non-zero if any point fails, so it works as a pre-commit check.
+
+`analysis/generate_points.py` builds the list from OpenStreetMap instead:
+it pulls every named road of a significant class inside the city boundary,
+ranks them by class and length under per-class quotas, samples points along
+each corridor centre-first and spaced apart, then verifies every coordinate
+against Nominatim and re-samples any that fail. Point the `CITY_AREA`,
+`CITY_BBOX`, `CBD_BBOX` and `CITY_CENTRE` constants at another city to
+replicate the pipeline elsewhere.
+
+### Data quality of stored snapshots
+
+`audit` checks three things that fail independently:
+
+- **Coverage** — how many of the expected collection cycles actually ran, where
+  the gaps are, and which points went missing from cycles.
+- **Integrity** — nulls, out-of-range congestion ratios, `current_speed` above
+  `free_flow_speed`, duplicate rows, points whose coordinates changed.
+- **Signal** — whether the numbers actually move with real traffic. A feed can
+  be 100% complete and still worthless. The audit flags points whose speed
+  never changes, points pinned at free-flow, and reports the **rush-hour lift**
+  (mean congestion at 07/08/17/18 local minus 00–04 local). A clearly positive
+  lift is what a working feed looks like; a lift near zero means the provider
+  has no live probe data for those roads.
+
+Credentials come from environment variables or a local `.env` file:
+
+```
+TOMTOM_API_KEY=...
+SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_KEY=...
+```
+
 ## Performance
 
 **Data Volume (30-minute intervals)**
-- Points: 50
+- Points: 52
 - Collection cycles/day: 48
-- Rows/day: 2,400
-- Rows/month: ~72,000
+- Rows/day: 2,496
+- Rows/month: ~76,000
 - Storage/month: ~3-4 MB
 
 **Supabase Free Tier Capacity**
 - Storage: 500 MB
-- Estimated lifespan: ~11 years at current rate
+- Estimated lifespan: ~10 years at current rate
+- **Caution:** free-tier Supabase projects are paused after ~7 days of
+  inactivity. When collection stops, the project pauses too and has to be
+  restored from the dashboard before data can flow again.
 
 **API Costs**
-- TomTom free tier: ~2,500 requests/day
-- Current usage: ~2,400 requests/day (within free tier)
+- TomTom free tier: 2,500 requests/day
+- Current usage: **2,496 requests/day — 99.8% of the daily quota**
 - Supabase: Free tier (adequate)
+
+> **The API budget has no headroom.** 52 points x 48 cycles leaves 4 spare
+> requests per day. Any manual `workflow_dispatch`, any retry (the collector
+> retries up to 3 times per point), or any duplicated run pushes the day over
+> quota, and the remaining points return HTTP 403 until midnight UTC. If the
+> audit shows partial cycles clustered late in the day, this is why. Fix it by
+> moving to a 60-minute cadence (1,248/day), or by trimming the point list.
 
 ## Coverage & Limitations
 
@@ -268,12 +363,24 @@ Once the Nairobi pipeline is stable (2-4 weeks of data):
 
 ## Troubleshooting
 
+### Collection stopped after a couple of months, with no failed runs
+
+GitHub disabled the scheduled workflow after 60 days of repository inactivity.
+Check the **Actions** tab for a banner on **Collect Traffic Data** and click
+**Enable workflow**, then push a commit. See
+[Keeping Collection Alive](#keeping-collection-alive) — the keepalive workflow
+exists to stop this recurring.
+
+Also check Supabase: free-tier projects pause after ~7 days of inactivity, so a
+long collection outage usually means the database needs restoring too.
+
 ### No data appearing in database
 
 1. Check GitHub Actions logs: **Actions** → **Collect Traffic Data** → Latest run
 2. Verify secrets are set correctly
 3. Test locally: `python main.py collect`
 4. Check Supabase connection: Run `python main.py init` again
+5. Check the pipeline is alive: `python main.py healthcheck`
 
 ### GitHub Actions fails with "Rate limit"
 
@@ -294,7 +401,7 @@ TomTom rate limit exceeded. Happens if:
 dar-traffic-monitoring/
 ├── config/
 │   ├── settings.py              # Configuration (API keys, paths)
-│   └── monitored_points.json    # 50 monitoring locations
+│   └── monitored_points.json    # 52 monitoring locations
 ├── collectors/
 │   └── tomtom_collector.py      # TomTom API integration
 ├── database/
@@ -304,10 +411,16 @@ dar-traffic-monitoring/
 │   ├── api_helpers.py           # Request/retry logic
 │   ├── logger.py                # Logging configuration
 │   └── time_helpers.py          # Timestamp utilities
+├── analysis/
+│   ├── audit.py                 # Data quality audit (coverage/integrity/signal)
+│   ├── validate_points.py       # Checks coordinates against OpenStreetMap
+│   └── generate_points.py       # Builds the point list from OSM geometry
 ├── notebooks/                   # Jupyter notebooks for analysis
 ├── .github/workflows/
-│   └── collect-traffic.yml      # GitHub Actions scheduler
-├── main.py                      # Entry point (collect/init)
+│   ├── collect-traffic.yml      # GitHub Actions scheduler
+│   └── keepalive.yml            # Prevents the 60-day auto-disable
+├── main.py                      # Entry point (collect/init/audit/
+│                                #   healthcheck/validate-points)
 ├── requirements.txt             # Python dependencies
 └── README.md                    # This file
 ```
