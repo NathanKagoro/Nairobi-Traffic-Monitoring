@@ -20,7 +20,13 @@ point list is kept alongside for comparison and as a fallback.
 > This reports, per point, whether TomTom returns a live reading, has no road
 > segment there, or rejected the API key - three failures that are
 > indistinguishable in the collector's own logs. Run it before drawing any
-> conclusion about which city is viable. If Dar es Salaam turns out to be
+> conclusion about which city is viable.
+>
+> No local API key? Run it in Actions instead, where the secret already lives:
+> **Actions -> Diagnostics -> Run workflow**, pick `check-coverage` and a city.
+> The report appears in the run summary. GitHub secrets cannot be read back
+> out, so this is the only way to use the key without recovering it from the
+> provider. If Dar es Salaam turns out to be
 > genuinely uncovered, see [Future Directions](#future-directions) for the
 > alternative data sources evaluated.
 
@@ -481,6 +487,24 @@ TomTom rate limit exceeded. Happens if:
 2. Check firewall/VPN isn't blocking access
 3. Verify credentials are correct
 
+### "Failed to resolve <project>.supabase.co" / NameResolutionError
+
+DNS has no record for the project host at all. This is not a network glitch and
+retrying will not help - the project itself is gone or suspended:
+
+1. Open https://supabase.com/dashboard/projects
+2. If the project is listed as **paused**, restore it. Free-tier projects pause
+   after about a week of inactivity, so any collection outage eventually takes
+   the database down with it.
+3. If it is **not listed**, it has been deleted. Create a new project, run the
+   schema SQL printed by `python main.py init`, then update the `SUPABASE_URL`
+   and `SUPABASE_KEY` repository secrets.
+
+The `service_role` key lives in **Project Settings -> API** (newer dashboards:
+**Project Settings -> API Keys**, under *Legacy API keys*), behind a *Reveal*
+button. It bypasses row-level security, so treat it as a password: it belongs
+in `.env` or a GitHub secret and nowhere else.
+
 ## Project Structure
 
 ```
@@ -508,7 +532,8 @@ dar-traffic-monitoring/
 ├── notebooks/                   # Jupyter notebooks for analysis
 ├── .github/workflows/
 │   ├── collect-traffic.yml      # GitHub Actions scheduler
-│   └── keepalive.yml            # Prevents the 60-day auto-disable
+│   ├── keepalive.yml            # Prevents the 60-day auto-disable
+│   └── diagnostics.yml          # Manual: run checks using the repo secrets
 ├── main.py                      # Entry point (collect/init/audit/healthcheck/
 │                                #   validate-points/check-coverage)
 ├── requirements.txt             # Python dependencies

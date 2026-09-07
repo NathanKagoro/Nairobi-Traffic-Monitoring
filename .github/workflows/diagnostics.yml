@@ -1,0 +1,117 @@
+name: Diagnostics
+
+# Run the read-only diagnostic commands inside Actions, where the API keys
+# already live as repository secrets.
+#
+# This exists because secrets are write-only: once TOMTOM_API_KEY is set, it
+# cannot be read back out of GitHub. Without this workflow, answering "does
+# TomTom cover Dar es Salaam?" would mean recovering the key from the provider
+# first. Here the runner already has it.
+#
+# Results are written to the run summary, so there is no need to dig through
+# step logs.
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'Which diagnostic to run'
+        required: true
+        default: check-coverage
+        type: choice
+        options:
+          - check-coverage
+          - validate-points
+          - audit
+          - healthcheck
+      city:
+        description: 'City to target (check-coverage, validate-points)'
+        required: false
+        default: dar_es_salaam
+        type: choice
+        options:
+          - dar_es_salaam
+          - nairobi
+      limit:
+        description: 'check-coverage only: how many points to probe. Each costs one TomTom request.'
+        required: false
+        default: '10'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run diagnostic
+        env:
+          TOMTOM_API_KEY: ${{ secrets.TOMTOM_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          CITY: ${{ inputs.city }}
+        # Never fail the job: a diagnostic reporting bad news has done its job,
+        # and a red run here would be indistinguishable from a broken workflow.
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          case "${{ inputs.task }}" in
+            check-coverage)
+              python main.py check-coverage \
+                --city "${{ inputs.city }}" \
+                --limit "${{ inputs.limit }}" \
+                --out report.md | tee output.txt
+              ;;
+            validate-points)
+              python main.py validate-points \
+                --city "${{ inputs.city }}" \
+                --out report.md | tee output.txt
+              ;;
+            audit)
+              python main.py audit --out report.md | tee output.txt
+              ;;
+            healthcheck)
+              python main.py healthcheck | tee output.txt
+              ;;
+          esac
+
+      - name: Publish result to the run summary
+        if: always()
+        run: |
+          if [ -f report.md ]; then
+            cat report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "## ${{ inputs.task }}"
+              echo ''
+              echo '```'
+              tail -n 100 output.txt 2>/dev/null || echo 'No output produced.'
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.task }}-${{ inputs.city }}
+          path: |
+            report.md
+            output.txt
+          if-no-files-found: ignore
