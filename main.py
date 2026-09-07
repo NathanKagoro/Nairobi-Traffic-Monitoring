@@ -1,6 +1,6 @@
 """
 Main entry point for Dar Traffic Monitoring system.
-Provides collect, init, audit, healthcheck and validate-points commands
+Provides collect, init, audit, healthcheck, validate-points and check-coverage
 for GitHub Actions and local testing.
 """
 import json
@@ -13,6 +13,8 @@ from config.settings import (
     SUPABASE_URL,
     SUPABASE_KEY,
     MONITORED_POINTS_FILE,
+    CITY,
+    CITIES_DIR,
     COLLECTION_INTERVAL_MINUTES,
     LOCAL_UTC_OFFSET_HOURS,
 )
@@ -185,12 +187,16 @@ def audit(days: int = None, out_path: str = None) -> bool:
     return True
 
 
-def validate_points_cmd(out_path: str = None) -> bool:
+def validate_points_cmd(city: str = None, out_path: str = None) -> bool:
     # Offline-data check: do the configured coordinates match their labels?
     """
     Reverse-geocode every monitoring point and report label/coordinate mismatches.
 
     Slow by design - OpenStreetMap's Nominatim allows one request per second.
+
+    Args:
+        city: Which city's point list to validate (default: the configured CITY)
+        out_path: Optional path to write the Markdown report to
 
     Returns:
         bool: True if every point matched its claimed location
@@ -200,11 +206,19 @@ def validate_points_cmd(out_path: str = None) -> bool:
         validate_points,
         render_validation,
     )
+    from config.city_specs import city_spec
 
-    points = load_points(MONITORED_POINTS_FILE)
-    logger.info(f"Validating {len(points)} points (about {len(points)} seconds)...")
+    target_city = city or CITY
+    points_file = CITIES_DIR / f"{target_city}.json"
+    if not points_file.exists():
+        points_file = MONITORED_POINTS_FILE
 
-    results = validate_points(points)
+    points = load_points(points_file)
+    logger.info(f"Validating {len(points)} {target_city} points "
+                f"(about {len(points)} seconds)...")
+
+    # Bounds must match the city being validated, or every point reads OFF_AREA.
+    results = validate_points(points, bbox=city_spec(target_city)["bbox"])
     markdown = render_validation(results)
     print()
     print(markdown)
@@ -221,6 +235,49 @@ def validate_points_cmd(out_path: str = None) -> bool:
 
     logger.info("All points match their labels")
     return True
+
+
+def check_coverage_cmd(city: str = None, limit: int = 10,
+                       out_path: str = None) -> bool:
+    # Does the provider actually have data here? Never previously tested.
+    """
+    Probe monitoring points against the TomTom Traffic Flow API.
+
+    Args:
+        city: Which city's point list to probe (default: the configured CITY)
+        limit: How many points to probe. Each costs one API request against a
+               2,500/day allowance, so this samples rather than probing all.
+        out_path: Optional path to write the Markdown report to
+
+    Returns:
+        bool: True if at least one point returned a live reading
+    """
+    from analysis.coverage import check_coverage, render_coverage
+    from analysis.validate_points import load_points
+
+    if not TOMTOM_API_KEY or 'your_' in TOMTOM_API_KEY:
+        logger.error("TOMTOM_API_KEY is not set. Put it in a .env file or export it.")
+        return False
+
+    target_city = city or CITY
+    points_file = CITIES_DIR / f"{target_city}.json"
+    if not points_file.exists():
+        logger.error(f"No point list for {target_city!r} at {points_file}")
+        return False
+
+    points = load_points(points_file)
+    results = check_coverage(points, TOMTOM_API_KEY, limit=limit)
+
+    markdown = render_coverage(results, city=target_city)
+    print()
+    print(markdown)
+
+    if out_path:
+        with open(out_path, 'w', encoding='utf-8') as f:
+            f.write(markdown + "\n")
+        logger.info(f"Coverage report written to {out_path}")
+
+    return any(r["verdict"] == "OK" for r in results)
 
 
 def healthcheck(max_age_hours: int = 6) -> bool:
@@ -271,14 +328,18 @@ def main():
                                 - Data quality report on stored snapshots
         python main.py healthcheck [--max-age-hours N]
                                 - Exit non-zero if collection has stalled
-        python main.py validate-points [--out FILE]
+        python main.py validate-points [--city NAME] [--out FILE]
                                 - Check point coordinates against OpenStreetMap
+        python main.py check-coverage [--city NAME] [--limit N] [--out FILE]
+                                - Does the provider have data for these points?
     """
     usage = (
-        "Usage: python main.py [init|collect|audit|healthcheck|validate-points]\n"
+        "Usage: python main.py "
+        "[init|collect|audit|healthcheck|validate-points|check-coverage]\n"
         "  audit           [--days N] [--out FILE]\n"
         "  healthcheck     [--max-age-hours N]\n"
-        "  validate-points [--out FILE]"
+        "  validate-points [--city NAME] [--out FILE]\n"
+        "  check-coverage  [--city NAME] [--limit N] [--out FILE]"
     )
 
     if len(sys.argv) < 2:
@@ -307,7 +368,13 @@ def main():
     elif command == 'healthcheck':
         success = healthcheck(max_age_hours=flag('--max-age-hours', int, 6))
     elif command == 'validate-points':
-        success = validate_points_cmd(out_path=flag('--out'))
+        success = validate_points_cmd(city=flag('--city'), out_path=flag('--out'))
+    elif command == 'check-coverage':
+        success = check_coverage_cmd(
+            city=flag('--city'),
+            limit=flag('--limit', int, 10),
+            out_path=flag('--out'),
+        )
     else:
         print(f"Unknown command: {command}")
         print(usage)

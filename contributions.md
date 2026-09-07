@@ -14,9 +14,10 @@ This repository is designed so contributors can replicate the pipeline for other
 
 ## 1) Add Monitoring Points For Your Location
 
-Update the points file:
+Add or update a city's points file:
 
-- config/monitored_points.json
+- config/cities/<city>.json  (selected by the CITY environment variable)
+- config/city_specs.py       (the city's boundary, CBD box and centre)
 
 Use the same object format for each point:
 
@@ -62,8 +63,11 @@ Quality checks before opening a pull request:
 For a new city, prefer generating the list over typing it:
 
 ```bash
-# Edit CITY_AREA / CITY_BBOX / CBD_BBOX / CITY_CENTRE for your city first
-python -m analysis.generate_points 52
+# 1. Add your city to CITIES in config/city_specs.py
+# 2. Generate and verify its points
+python -m analysis.generate_points <city> 52
+# 3. Confirm the provider actually has data there before collecting
+python main.py check-coverage --city <city> --limit 10
 ```
 
 This builds the point list from OpenStreetMap road geometry, so every
@@ -85,7 +89,10 @@ Set environment variables:
 
 Important:
 
-- Your city must be supported by TomTom Traffic Flow coverage for live traffic collection.
+- Your city must be supported by TomTom Traffic Flow coverage for live traffic
+  collection. Verify this with `python main.py check-coverage` rather than
+  assuming - it distinguishes a real coverage gap from a rejected key or an
+  exhausted quota, which look identical in the collector's logs.
 - If unsupported, use the alternative API path described below.
 
 ## 3) Add A Different Traffic API Provider
@@ -167,7 +174,8 @@ If you want more ideas, these are high-impact:
 
 1. ~~City template generator for monitored_points.json~~ - done, see
    `analysis/generate_points.py`.
-2. Provider coverage checker script before collection starts.
+2. ~~Provider coverage checker script before collection starts~~ - done, see
+   `python main.py check-coverage`.
 3. ~~Data completeness report (expected vs inserted snapshots per cycle)~~ -
    done, see `python main.py audit`.
 4. Simple dashboard notebook for daily congestion trends.

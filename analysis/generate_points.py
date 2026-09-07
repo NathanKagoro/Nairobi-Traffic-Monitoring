@@ -33,6 +33,7 @@ from typing import Dict, List, Optional, Tuple
 
 import requests
 
+from config.city_specs import CITIES, DEFAULT_CITY, city_spec
 from analysis.validate_points import (
     USER_AGENT,
     reverse_geocode,
@@ -51,26 +52,7 @@ OVERPASS_MIRRORS = [
     "https://overpass.private.coffee/api/interpreter",
 ]
 
-# The city's administrative boundary, used in preference to a bounding box. A
-# rectangle over Nairobi also covers chunks of Kiambu and Kajiado counties, and
-# selects roads in Ruiru, Kikuyu and Ongata Rongai that the project does not
-# monitor. Querying the real polygon removes them exactly.
-CITY_AREA = {"name": "Nairobi", "admin_level": "4"}
-
-# Bounding box for the same area (min_lat, min_lon, max_lat, max_lon) in
-# Overpass order. Used to clip way geometry that runs past the boundary, so a
-# road is ranked on the length that lies inside the city.
-CITY_BBOX = (-1.45, 36.66, -1.15, 37.11)
-
-# Tight box over the central business district. CBD streets are short and
-# tagged as tertiary or residential, so they never survive a city-wide ranking
-# by length and have to be selected separately.
-CBD_BBOX = (-1.298, 36.812, -1.272, 36.840)
-
-# City centre, used to bias sampling inwards. The geometric midpoint of a long
-# radial road is out in the countryside - the midpoint of Ngong Road is nearer
-# Ngong town than Nairobi - so candidate positions are tried centre-first.
-CITY_CENTRE = (-1.2864, 36.8172)
+# City geography lives in config/city_specs.py so the validator can share it.
 
 # OSM highway classes worth monitoring, most significant first. The index in
 # this list is the ranking priority.
@@ -318,6 +300,7 @@ def _verify_and_repair(raw_points: List[Dict], *road_sources: Dict) -> List[Dict
         roads.update(source)
 
     verified: List[Dict] = []
+    unverified: List[str] = []
     for index, raw in enumerate(raw_points, start=1):
         road_name = raw["road"]
         logger.info(f"[{index}/{len(raw_points)}] verifying {road_name}")
@@ -330,8 +313,19 @@ def _verify_and_repair(raw_points: List[Dict], *road_sources: Dict) -> List[Dict
             verified.append(raw)
             continue
 
+        if not osm_road:
+            # Nominatim has no named road at this coordinate. That is NOT
+            # evidence the point is wrong: Overpass already places this node on
+            # the named way, and OSM's reverse-geocoding index is far sparser
+            # outside the largest cities. Treating this as a failure discarded
+            # Samora Avenue, Sokoine Drive, Morogoro Road and Bagamoyo Road -
+            # Dar es Salaam's main streets. Trust Overpass and keep the point.
+            unverified.append(road_name)
+            verified.append(raw)
+            continue
+
         logger.warning(f"{road_name} at {raw['lat']},{raw['lon']} resolves to "
-                       f"{osm_road or 'an unnamed road'}; re-sampling")
+                       f"{osm_road}; re-sampling")
 
         entry = roads.get(road_name)
         repaired = False
@@ -343,7 +337,8 @@ def _verify_and_repair(raw_points: List[Dict], *road_sources: Dict) -> List[Dict
                     continue
                 probe = reverse_geocode(coord[0], coord[1])
                 time.sleep(REQUEST_DELAY_SECONDS)
-                if road_matches(road_name, (probe or {}).get("address", {}).get("road")):
+                probe_road = (probe or {}).get("address", {}).get("road")
+                if road_matches(road_name, probe_road):
                     raw = dict(raw, lat=round(coord[0], 5), lon=round(coord[1], 5))
                     verified.append(raw)
                     logger.info(f"  repaired to {raw['lat']},{raw['lon']}")
@@ -354,17 +349,25 @@ def _verify_and_repair(raw_points: List[Dict], *road_sources: Dict) -> List[Dict
             logger.warning(f"  dropping {road_name}: no position could be confirmed")
 
     dropped = len(raw_points) - len(verified)
-    logger.info(f"Verified {len(verified)} points ({dropped} dropped)")
+    logger.info(
+        f"Verified {len(verified)} points: "
+        f"{len(verified) - len(unverified)} confirmed against Nominatim, "
+        f"{len(unverified)} trusted from Overpass geometry where Nominatim has "
+        f"no road name, {dropped} dropped"
+    )
     return verified
 
 
 def build_points(target_count: int = 52,
-                 city_area=CITY_AREA,
-                 city_bbox=CITY_BBOX,
-                 cbd_bbox=CBD_BBOX,
+                 city: str = DEFAULT_CITY,
                  label_with_area: bool = True,
                  verify: bool = True) -> List[Dict]:
-    """Generate a monitoring point list for the configured city."""
+    """Generate a monitoring point list for the named city."""
+    spec = city_spec(city)
+    city_area, city_bbox = spec["area"], spec["bbox"]
+    cbd_bbox, centre = spec["cbd"], spec["centre"]
+    logger.info(f"Generating points for {city}")
+
     arterials = group_roads(
         query_overpass(city_area, ARTERIAL_CLASSES), ARTERIAL_CLASSES, bbox=city_bbox
     )
@@ -405,7 +408,7 @@ def build_points(target_count: int = 52,
         where its geometric midpoint often falls.
         """
         candidates = sample_along(entry["nodes"], CANDIDATE_POSITIONS)
-        candidates.sort(key=lambda c: _haversine_km(c, CITY_CENTRE))
+        candidates.sort(key=lambda c: _haversine_km(c, centre))
         for coord in candidates:
             if try_place(road, entry, category, coord, min_km):
                 return True
@@ -523,12 +526,16 @@ def write_points(points: List[Dict], path) -> None:
 
 if __name__ == "__main__":
     import sys
-    from config.settings import MONITORED_POINTS_FILE
+    from config.settings import CITIES_DIR
 
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
-    target = int(sys.argv[1]) if len(sys.argv) > 1 else 52
-    generated = build_points(target_count=target)
-    write_points(generated, MONITORED_POINTS_FILE)
+    # Usage: python -m analysis.generate_points [city] [count]
+    city = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_CITY
+    target = int(sys.argv[2]) if len(sys.argv) > 2 else 52
+
+    generated = build_points(target_count=target, city=city)
+    CITIES_DIR.mkdir(parents=True, exist_ok=True)
+    write_points(generated, CITIES_DIR / f"{city}.json")

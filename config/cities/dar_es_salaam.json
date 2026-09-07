@@ -1,0 +1,314 @@
+[
+  {
+    "name": "Kawawa Road",
+    "lat": -6.82721,
+    "lon": 39.26644,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Uhuru Street",
+    "lat": -6.82128,
+    "lon": 39.28011,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Lumumba Street",
+    "lat": -6.82419,
+    "lon": 39.28113,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Gerezani Street",
+    "lat": -6.82323,
+    "lon": 39.28447,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Mkunguni Street",
+    "lat": -6.81962,
+    "lon": 39.27298,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Nkurumah Street",
+    "lat": -6.82403,
+    "lon": 39.28181,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Seaview Road",
+    "lat": -6.8049,
+    "lon": 39.28659,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Obama Road",
+    "lat": -6.80428,
+    "lon": 39.28966,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Msimbazi Street",
+    "lat": -6.81416,
+    "lon": 39.27561,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Sokoine Drive",
+    "lat": -6.81865,
+    "lon": 39.28933,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Samora Avenue",
+    "lat": -6.82096,
+    "lon": 39.28454,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Alykhan Road",
+    "lat": -6.81224,
+    "lon": 39.27986,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Azikiwe Road",
+    "lat": -6.81648,
+    "lon": 39.28952,
+    "category": "cbd_corridor"
+  },
+  {
+    "name": "Morogoro Road - Mchikichini",
+    "lat": -6.81201,
+    "lon": 39.2688,
+    "category": "highway"
+  },
+  {
+    "name": "Bagamoyo Road - Lugalo",
+    "lat": -6.75406,
+    "lon": 39.22322,
+    "category": "highway"
+  },
+  {
+    "name": "Kilwa Road - Kurasini",
+    "lat": -6.83992,
+    "lon": 39.28492,
+    "category": "highway"
+  },
+  {
+    "name": "Morogoro Main Road - Mbezi",
+    "lat": -6.79584,
+    "lon": 39.08338,
+    "category": "highway"
+  },
+  {
+    "name": "Nyerere Road - Ilala Municipal",
+    "lat": -6.82667,
+    "lon": 39.27762,
+    "category": "highway"
+  },
+  {
+    "name": "Ali Hassan Mwinyi Road",
+    "lat": -6.79253,
+    "lon": 39.28013,
+    "category": "highway"
+  },
+  {
+    "name": "New Bagamoyo Road",
+    "lat": -6.77784,
+    "lon": 39.25993,
+    "category": "highway"
+  },
+  {
+    "name": "Mfugale flyover",
+    "lat": -6.84327,
+    "lon": 39.24759,
+    "category": "highway"
+  },
+  {
+    "name": "Nelson Mandela Road - Kurasini",
+    "lat": -6.85548,
+    "lon": 39.29139,
+    "category": "main_road"
+  },
+  {
+    "name": "Sam Nujoma Road",
+    "lat": -6.76509,
+    "lon": 39.22884,
+    "category": "main_road"
+  },
+  {
+    "name": "Chang'ombe Road",
+    "lat": -6.83743,
+    "lon": 39.27161,
+    "category": "main_road"
+  },
+  {
+    "name": "Mwai Kibaki Road",
+    "lat": -6.77552,
+    "lon": 39.26394,
+    "category": "main_road"
+  },
+  {
+    "name": "Old Bagamoyo Road",
+    "lat": -6.73631,
+    "lon": 39.23496,
+    "category": "main_road"
+  },
+  {
+    "name": "Nyerere Bridge",
+    "lat": -6.85935,
+    "lon": 39.30267,
+    "category": "main_road"
+  },
+  {
+    "name": "Charambe-Mbande Road",
+    "lat": -6.96248,
+    "lon": 39.22541,
+    "category": "main_road"
+  },
+  {
+    "name": "Africana Drive",
+    "lat": -6.70189,
+    "lon": 39.22107,
+    "category": "main_road"
+  },
+  {
+    "name": "Pemba Mnazi Road - Somangila",
+    "lat": -6.95119,
+    "lon": 39.47778,
+    "category": "main_road"
+  },
+  {
+    "name": "Wazo Road",
+    "lat": -6.72585,
+    "lon": 39.14093,
+    "category": "main_road"
+  },
+  {
+    "name": "Mji Mwema Road",
+    "lat": -6.82086,
+    "lon": 39.31415,
+    "category": "main_road"
+  },
+  {
+    "name": "Tabata Road",
+    "lat": -6.82864,
+    "lon": 39.2313,
+    "category": "main_road"
+  },
+  {
+    "name": "Shekilango",
+    "lat": -6.77345,
+    "lon": 39.2357,
+    "category": "main_road"
+  },
+  {
+    "name": "Jet Road",
+    "lat": -6.8589,
+    "lon": 39.21788,
+    "category": "main_road"
+  },
+  {
+    "name": "Toure Drive",
+    "lat": -6.78298,
+    "lon": 39.28616,
+    "category": "main_road"
+  },
+  {
+    "name": "Goba road",
+    "lat": -6.75471,
+    "lon": 39.12764,
+    "category": "main_road"
+  },
+  {
+    "name": "Uhuru Road",
+    "lat": -6.8292,
+    "lon": 39.25365,
+    "category": "main_road"
+  },
+  {
+    "name": "Tungi Road",
+    "lat": -6.86365,
+    "lon": 39.32804,
+    "category": "main_road"
+  },
+  {
+    "name": "Morogoro Road - Mbezi",
+    "lat": -6.79093,
+    "lon": 39.13313,
+    "category": "highway"
+  },
+  {
+    "name": "Morogoro Road - Ubungo Municipal",
+    "lat": -6.78683,
+    "lon": 39.17317,
+    "category": "highway"
+  },
+  {
+    "name": "Bagamoyo Road - Mbezi",
+    "lat": -6.72134,
+    "lon": 39.21266,
+    "category": "highway"
+  },
+  {
+    "name": "Bagamoyo Road - Kunduchi",
+    "lat": -6.68483,
+    "lon": 39.20114,
+    "category": "highway"
+  },
+  {
+    "name": "Pemba Mnazi Road - Pemba Mnazi",
+    "lat": -7.13817,
+    "lon": 39.52069,
+    "category": "main_road"
+  },
+  {
+    "name": "Pemba Mnazi Road - Pemba Mnazi (2)",
+    "lat": -7.07056,
+    "lon": 39.53434,
+    "category": "main_road"
+  },
+  {
+    "name": "Nelson Mandela Road - Makuburi",
+    "lat": -6.80428,
+    "lon": 39.2108,
+    "category": "main_road"
+  },
+  {
+    "name": "Nelson Mandela Road - Buguruni",
+    "lat": -6.8299,
+    "lon": 39.23704,
+    "category": "main_road"
+  },
+  {
+    "name": "Kilwa Road - Mbagala",
+    "lat": -6.91227,
+    "lon": 39.27007,
+    "category": "highway"
+  },
+  {
+    "name": "Kilwa Road - Mbagala (2)",
+    "lat": -6.89328,
+    "lon": 39.26714,
+    "category": "highway"
+  },
+  {
+    "name": "Morogoro Main Road - Ubungo Municipal",
+    "lat": -6.79023,
+    "lon": 39.01772,
+    "category": "highway"
+  },
+  {
+    "name": "Morogoro Main Road - Kibamba",
+    "lat": -6.79163,
+    "lon": 39.03768,
+    "category": "highway"
+  },
+  {
+    "name": "Nyerere Road - Kipawa",
+    "lat": -6.86279,
+    "lon": 39.20687,
+    "category": "highway"
+  }
+]

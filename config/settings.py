@@ -22,7 +22,18 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY", "your_supabase_key_here")
 # Paths
 PROJECT_ROOT = Path(__file__).parent.parent
 CONFIG_DIR = PROJECT_ROOT / "config"
-MONITORED_POINTS_FILE = CONFIG_DIR / "monitored_points.json"
+CITIES_DIR = CONFIG_DIR / "cities"
+
+# Which city to collect for. Each city has its own point list under
+# config/cities/, so switching target is a one-line change rather than an
+# overwrite - and the previous city's points stay available for comparison.
+CITY = os.getenv("CITY", "dar_es_salaam")
+
+_city_points = CITIES_DIR / f"{CITY}.json"
+# Fall back to the legacy single-city path so older checkouts keep working.
+MONITORED_POINTS_FILE = (
+    _city_points if _city_points.exists() else CONFIG_DIR / "monitored_points.json"
+)
 
 # Collection cadence, in minutes. Used by the audit tool to work out how many
 # collection cycles *should* exist between the first and last snapshot.

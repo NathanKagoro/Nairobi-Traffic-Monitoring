@@ -11,6 +11,9 @@ point claims to be. Verdicts:
   MATCH     - the coordinate sits on a road whose name matches the point name.
   AREA_ONLY - right neighbourhood, but not the road the point claims. Usually
               means the coordinate drifted onto a nearby side street.
+  UNVERIFIED- OSM has no named road at the coordinate, so the claim can be
+              neither confirmed nor refuted here. Common in Dar es Salaam,
+              where the reverse-geocoding index is sparse. Not a failure.
   MISMATCH  - the coordinate is nowhere near anything matching the point name.
               The series will be labelled as one road while measuring another.
   OFF_AREA  - the coordinate falls outside the target city bounding box.
@@ -28,6 +31,8 @@ from typing import Dict, List, Optional
 
 import requests
 
+from config.city_specs import DEFAULT_CITY, city_spec
+
 logger = logging.getLogger(__name__)
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse"
@@ -37,8 +42,9 @@ NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse"
 USER_AGENT = "dar-traffic-monitoring/1.0 (point validation; github.com/NathanKagoro)"
 REQUEST_DELAY_SECONDS = 1.1
 
-# Rough Nairobi bounding box (min_lat, max_lat, min_lon, max_lon).
-NAIROBI_BBOX = (-1.45, -1.15, 36.65, 37.05)
+# Bounding boxes are (south, west, north, east) throughout - see
+# config/city_specs.py. Validation defaults to the configured city.
+DEFAULT_BBOX = city_spec(DEFAULT_CITY)["bbox"]
 
 # Words that carry no location information when matching a name against OSM.
 STOPWORDS = {
@@ -51,6 +57,7 @@ STOPWORDS = {
     # the city. Without these, any point anywhere in Nairobi "matches" any
     # point name containing the word Nairobi.
     "nairobi", "kenya", "county", "ward", "division", "sublocation", "location",
+    "dar", "salaam", "tanzania", "region", "municipal", "district",
 }
 
 
@@ -115,7 +122,7 @@ def reverse_geocode(lat: float, lon: float) -> Optional[Dict]:
     return response.json()
 
 
-def validate_point(point: Dict, bbox=NAIROBI_BBOX) -> Dict:
+def validate_point(point: Dict, bbox=DEFAULT_BBOX) -> Dict:
     """Check one point's coordinate against OSM and against the city bounds."""
     name = point.get("name", "")
     lat = point.get("lat")
@@ -131,8 +138,8 @@ def validate_point(point: Dict, bbox=NAIROBI_BBOX) -> Dict:
         "detail": "",
     }
 
-    min_lat, max_lat, min_lon, max_lon = bbox
-    if not (min_lat <= lat <= max_lat and min_lon <= lon <= max_lon):
+    south, west, north, east = bbox
+    if not (south <= lat <= north and west <= lon <= east):
         result["verdict"] = "OFF_AREA"
         result["detail"] = "coordinate falls outside the city bounding box"
         return result
@@ -165,6 +172,13 @@ def validate_point(point: Dict, bbox=NAIROBI_BBOX) -> Dict:
     if road_matches(name, road):
         result["verdict"] = "MATCH"
         result["detail"] = f"on {road}"
+    elif not road:
+        # OSM knows of no named road at this coordinate. That is not evidence
+        # the point is wrong - the reverse-geocoding index is far sparser
+        # outside the largest cities, and Dar es Salaam's main streets resolve
+        # to nothing. Report it as unverified rather than as a mismatch.
+        result["verdict"] = "UNVERIFIED"
+        result["detail"] = "OSM has no named road at this coordinate"
     elif not claimed:
         result["verdict"] = "UNKNOWN"
         result["detail"] = "point name carries no distinguishing words"
@@ -183,7 +197,7 @@ def validate_point(point: Dict, bbox=NAIROBI_BBOX) -> Dict:
     return result
 
 
-def validate_points(points: List[Dict], bbox=NAIROBI_BBOX) -> List[Dict]:
+def validate_points(points: List[Dict], bbox=DEFAULT_BBOX) -> List[Dict]:
     """Validate every point, respecting the Nominatim rate limit."""
     results = []
     for index, point in enumerate(points, start=1):
@@ -196,7 +210,8 @@ def validate_points(points: List[Dict], bbox=NAIROBI_BBOX) -> List[Dict]:
 
 def render_validation(results: List[Dict]) -> str:
     """Render validation results as Markdown, worst first."""
-    order = {"OFF_AREA": 0, "MISMATCH": 1, "AREA_ONLY": 2, "UNKNOWN": 3, "MATCH": 4}
+    order = {"OFF_AREA": 0, "MISMATCH": 1, "AREA_ONLY": 2, "UNVERIFIED": 3,
+             "UNKNOWN": 4, "MATCH": 5}
     ranked = sorted(results, key=lambda r: (order.get(r["verdict"], 9), r["name"]))
 
     counts: Dict[str, int] = {}
@@ -206,7 +221,8 @@ def render_validation(results: List[Dict]) -> str:
     lines = ["# Monitoring point validation", ""]
     lines.append("Each configured coordinate reverse-geocoded against OpenStreetMap.")
     lines.append("")
-    for verdict in ("MATCH", "AREA_ONLY", "MISMATCH", "OFF_AREA", "UNKNOWN"):
+    for verdict in ("MATCH", "UNVERIFIED", "AREA_ONLY", "MISMATCH", "OFF_AREA",
+                    "UNKNOWN"):
         if verdict in counts:
             lines.append(f"- **{verdict}**: {counts[verdict]}")
     lines.append("")

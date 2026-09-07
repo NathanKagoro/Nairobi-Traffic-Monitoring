@@ -1,8 +1,28 @@
-# Nairobi Traffic Monitoring System
+# Dar es Salaam Traffic Monitoring System
 
-A lightweight, Python-based traffic data collection pipeline for East African urban monitoring. Collects traffic data from TomTom API for 52 strategic monitoring points in Nairobi, Kenya every 30 minutes.
+A lightweight, Python-based traffic data collection pipeline for East African
+urban monitoring. Collects traffic data from the TomTom API for 52 strategic
+monitoring points every 30 minutes.
 
-> **Note on Project Scope**: This project was originally designed for Dar es Salaam, Tanzania. However, TomTom's Traffic Flow API does not provide coverage in Tanzania or Uganda. The monitoring points were pivoted to Nairobi, Kenya, which has full TomTom traffic coverage. For more information on coverage limitations and alternative data sources for Dar es Salaam and Uganda, see [Future Directions](#future-directions) below.
+**Target city: Dar es Salaam, Tanzania.** The collector reads
+`config/cities/<CITY>.json`, so switching city is a one-line change; a Nairobi
+point list is kept alongside for comparison and as a fallback.
+
+> **Coverage status.** The project was briefly pivoted to Nairobi in May 2026 on
+> the assumption that TomTom Traffic Flow has no coverage in Tanzania. That
+> assumption was never tested point by point, and it is the reason the project
+> stopped monitoring the city it was built for. It is now testable:
+>
+> ```bash
+> python main.py check-coverage --city dar_es_salaam --limit 10
+> ```
+>
+> This reports, per point, whether TomTom returns a live reading, has no road
+> segment there, or rejected the API key - three failures that are
+> indistinguishable in the collector's own logs. Run it before drawing any
+> conclusion about which city is viable. If Dar es Salaam turns out to be
+> genuinely uncovered, see [Future Directions](#future-directions) for the
+> alternative data sources evaluated.
 
 ## Architecture
 
@@ -108,15 +128,31 @@ Collection will start automatically every 30 minutes. Monitor runs in:
 
 ## Monitoring Points
 
-**52 strategic locations covering Nairobi:**
-- CBD corridors (Tom Mboya St, Dedan Kimathi Ave, Kenyatta Ave)
-- Major highways (Southern Bypass, Eastern Bypass, Northern Bypass, Thika Road)
-- Airport corridor (JKIA approaches)
-- Commercial zones (Westlands, Gigiri, Upper Hill)
-- Residential areas (Karen, Langata, Parklands, Muthaiga, Kilimani)
-- Industrial zones (Industrial Area, Dandora, Embakasi)
-- Key institutions (University of Nairobi, Kenyatta National Hospital)
-- Outer ring road segments
+Point lists live in `config/cities/`, one file per city, selected by the `CITY`
+environment variable. Both were generated from OpenStreetMap road geometry and
+verified coordinate by coordinate - see
+[Monitoring point integrity](#monitoring-point-integrity).
+
+**`dar_es_salaam.json` - 52 points across 39 roads:**
+- CBD streets (Samora Avenue, Sokoine Drive, Azikiwe Road, Nkurumah Street,
+  Msimbazi Street, Uhuru Street, Lumumba Street)
+- Major arterials (Morogoro Road, Bagamoyo Road, Kilwa Road, Nyerere Road,
+  Ali Hassan Mwinyi Road, Nelson Mandela Road, Kawawa Road)
+- Airport and port corridors (Nyerere Road at Kipawa, Kilwa Road at Kurasini,
+  Mfugale flyover)
+- Outer corridors (New Bagamoyo Road, Sam Nujoma Road, Old Bagamoyo Road,
+  Goba Road, Shekilango)
+- Kigamboni and the southern reaches (Nyerere Bridge, Mji Mwema Road,
+  Tungi Road, Charambe-Mbande Road)
+
+**`nairobi.json` - 52 points across 45 roads:**
+- CBD corridors (Tom Mboya Street, Moi Avenue, Kenyatta Avenue,
+  Haile Selassie Avenue)
+- Major highways (Uhuru Highway, Mombasa Road, Thika Road, Nairobi Expressway,
+  Southern/Eastern/Northern Bypass, Waiyaki Way)
+- Arterials (Ngong Road, Langata Road, Jogoo Road, Outer Ring Road,
+  Enterprise Road, Limuru Road)
+- Airport corridor (Airport North Road, Airport South Road)
 
 **Categories:**
 - `cbd_corridor`: City center routes
@@ -224,8 +260,12 @@ python main.py healthcheck --max-age-hours 6
 # Check every configured coordinate against OpenStreetMap
 python main.py validate-points --out points.md
 
-# Regenerate the whole point list from OSM road geometry
-python -m analysis.generate_points 52
+# Regenerate a city's point list from OSM road geometry
+python -m analysis.generate_points dar_es_salaam 52
+python -m analysis.generate_points nairobi 52
+
+# Check whether the provider actually has data for those points
+python main.py check-coverage --city dar_es_salaam --limit 10
 ```
 
 Coordinates typed by hand land in the wrong place, and the failure is silent:
@@ -241,9 +281,15 @@ It exits non-zero if any point fails, so it works as a pre-commit check.
 it pulls every named road of a significant class inside the city boundary,
 ranks them by class and length under per-class quotas, samples points along
 each corridor centre-first and spaced apart, then verifies every coordinate
-against Nominatim and re-samples any that fail. Point the `CITY_AREA`,
-`CITY_BBOX`, `CBD_BBOX` and `CITY_CENTRE` constants at another city to
-replicate the pipeline elsewhere.
+against Nominatim and re-samples any that fail. Add an entry to `CITIES` in
+`config/city_specs.py` to replicate the pipeline in another city.
+
+Where Nominatim has no road name at a coordinate the point is kept and marked
+`UNVERIFIED` rather than rejected: OSM's reverse-geocoding index is far sparser
+in Dar es Salaam than in Nairobi, and treating silence as failure discarded
+Samora Avenue, Sokoine Drive, Morogoro Road and Bagamoyo Road - the city's main
+streets. Overpass already places each node on the named way, which is the
+stronger evidence.
 
 ### Data quality of stored snapshots
 
@@ -298,15 +344,37 @@ SUPABASE_KEY=...
 
 ## Coverage & Limitations
 
-### Why Nairobi, Not Dar es Salaam?
+### Is Dar es Salaam covered?
 
-TomTom's Traffic Flow API does **not** cover Tanzania or Uganda. This is due to insufficient probe vehicle data (GPS from navigation app users) in these countries. The following coverage applies in East Africa:
+**Unresolved - test it, do not assume.** In May 2026 the project was pivoted to
+Nairobi on the basis that TomTom Traffic Flow does not cover Tanzania. The
+evidence for that was a run of failed requests, which at the time could not be
+told apart from an API key problem, a rate limit, or the zoom-level bug that was
+being fixed in the same sitting.
+
+`python main.py check-coverage` now distinguishes those cases explicitly, so
+the question can be answered with data:
+
+| Verdict | Meaning |
+|---|---|
+| `OK` | TomTom returned a live reading for this coordinate |
+| `NO_COVERAGE` | No road segment near the point - genuine coverage gap |
+| `AUTH` | Key rejected. Says nothing about coverage |
+| `QUOTA` | Daily allowance exhausted. Says nothing about coverage |
+
+A returned reading still is not proof of *useful* data. Run a collection cycle,
+then `python main.py audit` and read the rush-hour lift: if congestion at
+07:00-08:00 and 17:00-18:00 is no higher than at 02:00, TomTom is serving a
+static free-flow figure rather than live probe data, and the series is a
+constant dressed up as a measurement.
+
+The historical claim, retained because it may still prove correct:
 
 | Country | TomTom Coverage | HERE Maps Coverage |
 |---------|-----------------|-------------------|
-| **Kenya** | ✅ (Nairobi) | ✅ (Limited) |
-| **Tanzania** | ❌ | ❌ |
-| **Uganda** | ❌ | ❌ |
+| **Kenya** | Yes (Nairobi) | Yes (limited) |
+| **Tanzania** | Believed none - unverified | Believed none - unverified |
+| **Uganda** | Believed none - unverified | Believed none - unverified |
 
 **Other Free/Paid Options Evaluated:**
 - HERE Maps Traffic API: No Tanzania/Uganda coverage
@@ -316,7 +384,25 @@ TomTom's Traffic Flow API does **not** cover Tanzania or Uganda. This is due to 
 
 ## Future Directions
 
-### Option 1: Pilot Alternative Data Sources for Dar es Salaam & Uganda
+### Option 1: Alternative providers, if TomTom really has no Dar es Salaam data
+
+Run `python main.py check-coverage --city dar_es_salaam` first. Only if it
+reports `NO_COVERAGE` across the board is a provider switch warranted - an
+`AUTH` or `QUOTA` result means the key needs attention, not the provider.
+
+Candidates worth probing, roughly in order of effort:
+
+- **Google Maps Routes API** - traffic-aware routing is available in Tanzania
+  and returns `duration_in_traffic`, from which a corridor speed can be derived.
+  Paid, and the pricing model needs checking before committing.
+- **HERE Traffic API** - the assumed no-coverage verdict has the same
+  provenance as TomTom's and is equally untested.
+- **Mapbox Directions** - traffic-aware profile, coverage in Tanzania unclear.
+
+`collectors/` is the seam to extend: add a collector that maps the provider's
+response onto the existing snapshot fields and the storage layer is unchanged.
+
+### Option 2: Pilot Alternative Data Sources for Dar es Salaam & Uganda
 
 **OpenStreetMap-based collection:**
 - Use Overpass API to extract road network and historical speeds
@@ -328,16 +414,16 @@ TomTom's Traffic Flow API does **not** cover Tanzania or Uganda. This is due to 
 - Build local speed profiles without relying on external APIs
 - Fits the East African research context better
 
-### Option 2: Academic Partnerships
+### Option 3: Academic Partnerships
 
 UDSM and international urban mobility research teams (World Bank, UN-Habitat) have published Dar es Salaam traffic datasets:
 - Manual traffic counts at strategic intersections
 - Could seed a local database
 - Combine with progressive real-time collection infrastructure
 
-### Option 3: Expand to Other East African Cities
+### Option 4: Expand to Other East African Cities
 
-Once the Nairobi pipeline is stable (2-4 weeks of data):
+Once the pipeline is stable (2-4 weeks of data):
 - Add Kigali, Rwanda (TomTom + HERE coverage unclear, needs verification)
 - Add other Kenyan cities (Mombasa, Kisumu)
 - Establish regional comparison baseline
@@ -400,8 +486,11 @@ TomTom rate limit exceeded. Happens if:
 ```
 dar-traffic-monitoring/
 ├── config/
-│   ├── settings.py              # Configuration (API keys, paths)
-│   └── monitored_points.json    # 52 monitoring locations
+│   ├── settings.py              # Configuration (API keys, paths, CITY)
+│   ├── city_specs.py            # Per-city boundaries, CBD boxes, centres
+│   └── cities/
+│       ├── dar_es_salaam.json   # 52 monitoring locations (default)
+│       └── nairobi.json         # 52 monitoring locations
 ├── collectors/
 │   └── tomtom_collector.py      # TomTom API integration
 ├── database/
@@ -413,14 +502,15 @@ dar-traffic-monitoring/
 │   └── time_helpers.py          # Timestamp utilities
 ├── analysis/
 │   ├── audit.py                 # Data quality audit (coverage/integrity/signal)
+│   ├── coverage.py              # Does the provider have data for these points?
 │   ├── validate_points.py       # Checks coordinates against OpenStreetMap
 │   └── generate_points.py       # Builds the point list from OSM geometry
 ├── notebooks/                   # Jupyter notebooks for analysis
 ├── .github/workflows/
 │   ├── collect-traffic.yml      # GitHub Actions scheduler
 │   └── keepalive.yml            # Prevents the 60-day auto-disable
-├── main.py                      # Entry point (collect/init/audit/
-│                                #   healthcheck/validate-points)
+├── main.py                      # Entry point (collect/init/audit/healthcheck/
+│                                #   validate-points/check-coverage)
 ├── requirements.txt             # Python dependencies
 └── README.md                    # This file
 ```
