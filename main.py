@@ -7,6 +7,7 @@ import json
 import sys
 import logging
 from datetime import datetime, timezone
+from pathlib import Path
 
 from config.settings import (
     TOMTOM_API_KEY,
@@ -136,7 +137,8 @@ def collect() -> bool:
         return False
 
 
-def audit(days: int = None, out_path: str = None) -> bool:
+def audit(days: int = None, out_path: str = None, city: str = None,
+          points_path: str = None) -> bool:
     # Read-only quality check over whatever is already in the database.
     """
     Audit the collected data for coverage, integrity and real-world signal.
@@ -144,6 +146,10 @@ def audit(days: int = None, out_path: str = None) -> bool:
     Args:
         days: Only audit snapshots from the last N days (default: everything)
         out_path: Optional path to write the Markdown report to
+        city: Compare against this city's point list instead of the configured one
+        points_path: Compare against an explicit point list file. Use this when
+            auditing historical data collected under a point list that has since
+            changed - otherwise every stored point reads as "not in config".
 
     Returns:
         bool: True if the audit ran (not a judgement on the data itself)
@@ -155,11 +161,21 @@ def audit(days: int = None, out_path: str = None) -> bool:
         logger.error("SUPABASE_KEY is not set. Put it in a .env file or export it.")
         return False
 
-    # The configured point list is the yardstick for "should have reported".
+    # The point list is the yardstick for "should have reported". Which list is
+    # correct depends on when the data was collected, so allow it to be chosen.
+    if points_path:
+        chosen_points = Path(points_path)
+    elif city:
+        chosen_points = CITIES_DIR / f"{city}.json"
+    else:
+        chosen_points = MONITORED_POINTS_FILE
+
     expected_points = None
     try:
-        with open(MONITORED_POINTS_FILE, 'r') as f:
+        with open(chosen_points, 'r', encoding='utf-8') as f:
             expected_points = [p['name'] for p in json.load(f)]
+        logger.info(f"Comparing against {len(expected_points)} points "
+                    f"from {chosen_points.name}")
     except Exception as e:
         logger.warning(f"Could not load monitored points, auditing without them: {e}")
 
@@ -218,7 +234,14 @@ def validate_points_cmd(city: str = None, out_path: str = None) -> bool:
                 f"(about {len(points)} seconds)...")
 
     # Bounds must match the city being validated, or every point reads OFF_AREA.
-    results = validate_points(points, bbox=city_spec(target_city)["bbox"])
+    try:
+        bbox = city_spec(target_city)["bbox"]
+    except ValueError as e:
+        # Archived lists such as nairobi_legacy have points but no geography.
+        logger.error(f"{e} Point lists without a spec entry cannot be validated.")
+        return False
+
+    results = validate_points(points, bbox=bbox)
     markdown = render_validation(results)
     print()
     print(markdown)
@@ -324,7 +347,7 @@ def main():
     Usage:
         python main.py init     - Initialize database
         python main.py collect  - Run collection cycle
-        python main.py audit [--days N] [--out FILE]
+        python main.py audit [--days N] [--city NAME] [--points FILE] [--out FILE]
                                 - Data quality report on stored snapshots
         python main.py healthcheck [--max-age-hours N]
                                 - Exit non-zero if collection has stalled
@@ -336,7 +359,7 @@ def main():
     usage = (
         "Usage: python main.py "
         "[init|collect|audit|healthcheck|validate-points|check-coverage]\n"
-        "  audit           [--days N] [--out FILE]\n"
+        "  audit           [--days N] [--city NAME] [--points FILE] [--out FILE]\n"
         "  healthcheck     [--max-age-hours N]\n"
         "  validate-points [--city NAME] [--out FILE]\n"
         "  check-coverage  [--city NAME] [--limit N] [--out FILE]"
@@ -364,7 +387,12 @@ def main():
     elif command == 'collect':
         success = collect()
     elif command == 'audit':
-        success = audit(days=flag('--days', int), out_path=flag('--out'))
+        success = audit(
+            days=flag('--days', int),
+            out_path=flag('--out'),
+            city=flag('--city'),
+            points_path=flag('--points'),
+        )
     elif command == 'healthcheck':
         success = healthcheck(max_age_hours=flag('--max-age-hours', int, 6))
     elif command == 'validate-points':

@@ -259,10 +259,22 @@ def audit_rows(
     if expected_points:
         expected_set = set(expected_points)
         observed_set = set(observed_points)
+        overlap = expected_set & observed_set
         report["points_configured"] = len(expected_set)
-        report["points_never_collected"] = sorted(expected_set - observed_set)
-        report["points_not_in_config"] = sorted(observed_set - expected_set)
-        points_per_cycle_target = len(expected_set)
+        report["points_overlap"] = len(overlap)
+        report["config_matches_data"] = bool(overlap)
+
+        if overlap:
+            report["points_never_collected"] = sorted(expected_set - observed_set)
+            report["points_not_in_config"] = sorted(observed_set - expected_set)
+            points_per_cycle_target = len(expected_set)
+        else:
+            # The configured list shares no names at all with the stored data,
+            # so it describes a different city or a different era of this
+            # project. Diffing them would report every point as both missing
+            # and unexpected, which says nothing. Fall back to the data's own
+            # point count as the completeness yardstick.
+            points_per_cycle_target = len(observed_points)
     else:
         points_per_cycle_target = len(observed_points)
 
@@ -488,13 +500,23 @@ def render_report(report: Dict, worst_points: int = 15) -> str:
     add(f"- Complete cycles: **{report['full_cycles']:,}**, "
         f"partial: **{report['partial_cycles']:,}**")
 
+    if report.get("config_matches_data") is False:
+        add(f"- **The configured point list does not describe this data.** "
+            f"{report.get('points_configured', 0)} points are configured and "
+            f"{report['distinct_points']} appear in the database, with no names "
+            "in common - the stored data was collected under a different city or "
+            "an earlier version of the point list. Completeness below is measured "
+            "against the points actually present, not the configured ones. Pass "
+            "`--points PATH` to compare against the list that was live at the "
+            "time.")
     if report.get("points_never_collected"):
-        add(f"- Configured points that never returned data "
-            f"(**{len(report['points_never_collected'])}**): "
-            + ", ".join(report["points_never_collected"]))
+        names = report["points_never_collected"]
+        add(f"- Configured points that never returned data (**{len(names)}**): "
+            + ", ".join(names[:15]) + (" ..." if len(names) > 15 else ""))
     if report.get("points_not_in_config"):
-        add("- Points in the database but no longer in config: "
-            + ", ".join(report["points_not_in_config"]))
+        names = report["points_not_in_config"]
+        add(f"- Points in the database but no longer in config (**{len(names)}**): "
+            + ", ".join(names[:15]) + (" ..." if len(names) > 15 else ""))
 
     if report.get("largest_gaps"):
         add("")

@@ -151,6 +151,13 @@ verified coordinate by coordinate - see
 - Kigamboni and the southern reaches (Nyerere Bridge, Mji Mwema Road,
   Tungi Road, Charambe-Mbande Road)
 
+**`nairobi_legacy.json` - the original list, kept for auditing only.**
+This is the point list that was live from May to July 2026, preserved so the
+data collected in that window can be audited against the names it was actually
+stored under. **Do not collect with it:** validation found 35 of its 52
+coordinates were nowhere near the road they were named for. Use it as
+`python main.py audit --city nairobi_legacy`.
+
 **`nairobi.json` - 52 points across 45 roads:**
 - CBD corridors (Tom Mboya Street, Moi Avenue, Kenyatta Avenue,
   Haile Selassie Avenue)
@@ -252,6 +259,9 @@ If collection has already stopped, restarting it takes both of these:
 ```bash
 # Full report over everything collected so far
 python main.py audit
+
+# Audit historical data against the point list that was live at the time
+python main.py audit --city nairobi_legacy
 
 # Last 30 days only, written to a file
 python main.py audit --days 30 --out report.md

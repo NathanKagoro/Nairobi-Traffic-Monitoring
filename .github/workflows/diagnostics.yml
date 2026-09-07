@@ -25,13 +25,14 @@ on:
           - audit
           - healthcheck
       city:
-        description: 'City to target (check-coverage, validate-points)'
+        description: 'Point list to target. Use nairobi_legacy to audit data collected before September 2026.'
         required: false
         default: dar_es_salaam
         type: choice
         options:
           - dar_es_salaam
           - nairobi
+          - nairobi_legacy
       limit:
         description: 'check-coverage only: how many points to probe. Each costs one TomTom request.'
         required: false
@@ -84,7 +85,13 @@ jobs:
                 --out report.md | tee output.txt
               ;;
             audit)
-              python main.py audit --out report.md | tee output.txt
+              # --city picks which point list the stored data is compared
+              # against. Data collected before September 2026 used the old
+              # list: choose nairobi_legacy for it, or the report will show
+              # every stored point as unrecognised.
+              python main.py audit \
+                --city "${{ inputs.city }}" \
+                --out report.md | tee output.txt
               ;;
             healthcheck)
               python main.py healthcheck | tee output.txt
