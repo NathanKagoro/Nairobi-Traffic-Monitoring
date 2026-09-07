@@ -8,10 +8,17 @@ monitoring points every 30 minutes.
 `config/cities/<CITY>.json`, so switching city is a one-line change; a Nairobi
 point list is kept alongside for comparison and as a fallback.
 
-> **Coverage status.** The project was briefly pivoted to Nairobi in May 2026 on
-> the assumption that TomTom Traffic Flow has no coverage in Tanzania. That
-> assumption was never tested point by point, and it is the reason the project
-> stopped monitoring the city it was built for. It is now testable:
+> **Coverage status: TomTom cannot serve Dar es Salaam.** Verified 2026-09-07 -
+> all 52 monitoring points returned `Point too far from nearest existing
+> segment`, while the same API key returned 52/52 readings for Nairobi minutes
+> earlier. TomTom has map coverage in Tanzania but not *traffic* coverage.
+> Full evidence, including the alternative explanations ruled out, is in
+> [docs/provider-coverage.md](docs/provider-coverage.md).
+>
+> A different provider is required to monitor Dar es Salaam. Until one is in
+> place, `CITY=nairobi` is the only configuration that collects data.
+>
+> Re-check at any time - coverage does change:
 >
 > ```bash
 > python main.py check-coverage --city dar_es_salaam --limit 10
@@ -362,11 +369,15 @@ SUPABASE_KEY=...
 
 ### Is Dar es Salaam covered?
 
-**Unresolved - test it, do not assume.** In May 2026 the project was pivoted to
-Nairobi on the basis that TomTom Traffic Flow does not cover Tanzania. The
-evidence for that was a run of failed requests, which at the time could not be
-told apart from an API key problem, a rate limit, or the zoom-level bug that was
-being fixed in the same sitting.
+**No - established 2026-09-07, see [docs/provider-coverage.md](docs/provider-coverage.md).**
+All 52 points returned `Point too far from nearest existing segment` while the
+same key served Nairobi normally, which rules out the key, the quota and the
+coordinates as explanations.
+
+In May 2026 the project was pivoted to Nairobi on the same conclusion, but the
+evidence then was a run of failed requests that could not be told apart from an
+API key problem, a rate limit, or the zoom-level bug being fixed in the same
+sitting. The conclusion was right; the reasoning was not yet sound.
 
 `python main.py check-coverage` now distinguishes those cases explicitly, so
 the question can be answered with data:
@@ -384,13 +395,14 @@ then `python main.py audit` and read the rush-hour lift: if congestion at
 static free-flow figure rather than live probe data, and the series is a
 constant dressed up as a measurement.
 
-The historical claim, retained because it may still prove correct:
-
-| Country | TomTom Coverage | HERE Maps Coverage |
-|---------|-----------------|-------------------|
-| **Kenya** | Yes (Nairobi) | Yes (limited) |
-| **Tanzania** | Believed none - unverified | Believed none - unverified |
+| Country | TomTom Traffic Flow | HERE Traffic |
+|---------|--------------------|--------------|
+| **Kenya** | Verified: covered (Nairobi) | Believed limited - unverified |
+| **Tanzania** | **Verified: no coverage** | Believed none - unverified |
 | **Uganda** | Believed none - unverified | Believed none - unverified |
+
+Only the two rows marked *verified* have been tested. Probe before trusting the
+rest.
 
 **Other Free/Paid Options Evaluated:**
 - HERE Maps Traffic API: No Tanzania/Uganda coverage
