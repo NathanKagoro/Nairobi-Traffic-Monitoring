@@ -63,18 +63,49 @@ rush-hour lift measure.
 
 ---
 
-## Untested alternatives
+## Alternatives: not pursued, because neither is free without a card (2026-09-07)
 
-Do not act on the table below without probing first. That is the mistake this
-document exists to prevent.
+The project runs on services that cost nothing and cannot bill you: TomTom's
+free tier allows ~2,500 requests/day with no payment method on file. Both
+candidate replacements fail that test.
 
-| Provider | Free tier | Notes |
-|---|---|---|
-| Google Routes API | 5,000 events/month | Traffic-aware routing (`TRAFFIC_AWARE`, `TRAFFIC_AWARE_OPTIMAL`) is billed as the **Pro** SKU at $10/1,000 beyond the free tier - not the 10,000-event Essentials tier. Congestion would be derived from duration versus static duration rather than read as a speed. |
-| HERE Traffic API v7 | Freemium tier | Covers 70+ countries; whether Tanzania is among them is not established. Returns flow segments closest in shape to the current schema. |
-| Mapbox | Free tier | Traffic-aware directions; Tanzania coverage unclear. |
+| Provider | Free allowance | Card required? | Verdict |
+|---|---|---|---|
+| **HERE Traffic API v7** | 30,000 transactions/month (Base plan) | **Yes.** The no-card "Limited" plan was discontinued on 2025-08-31. | Not pursued |
+| **Google Routes API** | 5,000 events/month on the Pro SKU | **Yes.** A billing account with a valid payment method is required to issue an API key at all, even to stay inside the free tier. | Not pursued |
 
-### Budget shape if switching to a routing-based provider
+Both bill automatically on overage, so a runaway loop or a raised cadence turns
+into a real invoice. That is a different risk profile from the current setup and
+was declined.
+
+Detail worth keeping, should the decision be revisited:
+
+- **Google**: traffic-aware routing (`TRAFFIC_AWARE`, `TRAFFIC_AWARE_OPTIMAL`)
+  bills as the **Pro** SKU - $10/1,000 beyond 5,000/month - not the
+  10,000-event Essentials tier. The universal $200 monthly credit was retired
+  in March 2025 and replaced by per-SKU allowances that do not pool.
+- **HERE**: 30,000/month is genuinely workable. The current shape - 52 points
+  every 30 minutes - is ~75,000/month and would not fit, but 52 points sampled
+  hourly over an 18-hour day is ~28,000/month and would. Its flow-segment
+  response also maps almost directly onto the existing schema.
+- Neither provider's Tanzania coverage has been tested. HERE's marketing claims
+  70+ countries without naming them. **If either is ever adopted, probe
+  coverage before building anything** - the `check-coverage` command exists for
+  exactly this, and skipping that step is what cost this project four months.
+- **Mapbox** was not investigated.
+
+### Genuinely free routes to Dar es Salaam data, if the goal is pursued
+
+None of these give live traffic, and all are more work:
+
+- **OSM/Overpass road network + historical speed assumptions** - no live signal,
+  but free and locally independent.
+- **Crowdsourced GPS traces** from daladala fleets - builds a local speed
+  profile with no external provider at all.
+- **Academic and institutional datasets** - UDSM, World Bank and UN-Habitat
+  have published Dar es Salaam traffic counts.
+
+### Budget shape if a routing-based provider is ever adopted
 
 Point-sampling every 30 minutes does not survive contact with these free tiers.
 52 points x 48 cycles = 2,496 requests/day, roughly 75,000/month, against a

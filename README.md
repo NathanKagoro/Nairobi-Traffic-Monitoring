@@ -15,8 +15,15 @@ point list is kept alongside for comparison and as a fallback.
 > Full evidence, including the alternative explanations ruled out, is in
 > [docs/provider-coverage.md](docs/provider-coverage.md).
 >
-> A different provider is required to monitor Dar es Salaam. Until one is in
-> place, `CITY=nairobi` is the only configuration that collects data.
+> A different provider is required to monitor Dar es Salaam. **The collector
+> therefore runs against Nairobi** (`DEFAULT_CITY` in `config/city_specs.py`) -
+> it is the only configuration that collects anything. Point it back at Dar es
+> Salaam the moment a provider covering Tanzania is wired up.
+>
+> HERE and Google Routes were both assessed as replacements and declined: as of
+> September 2026 each requires a credit card on file and bills automatically on
+> overage, unlike TomTom's card-free tier. Details and the numbers are in
+> [docs/provider-coverage.md](docs/provider-coverage.md).
 >
 > Re-check at any time - coverage does change:
 >

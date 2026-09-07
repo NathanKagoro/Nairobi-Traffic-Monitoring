@@ -7,6 +7,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from config.city_specs import DEFAULT_CITY
+
 # Load a local .env when present so local runs (and the audit tool) pick up
 # credentials without exporting them by hand. GitHub Actions supplies these as
 # real environment variables, where load_dotenv() is a harmless no-op.
@@ -27,7 +29,11 @@ CITIES_DIR = CONFIG_DIR / "cities"
 # Which city to collect for. Each city has its own point list under
 # config/cities/, so switching target is a one-line change rather than an
 # overwrite - and the previous city's points stay available for comparison.
-CITY = os.getenv("CITY", "dar_es_salaam")
+#
+# `or` rather than a getenv default: CI passes CITY through from an Actions
+# variable that may be unset, which arrives as an empty string, and an empty
+# string would otherwise be taken as a city name.
+CITY = os.getenv("CITY") or DEFAULT_CITY
 
 _city_points = CITIES_DIR / f"{CITY}.json"
 # Fall back to the legacy single-city path so older checkouts keep working.

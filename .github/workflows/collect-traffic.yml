@@ -44,10 +44,11 @@ jobs:
           TOMTOM_API_KEY: ${{ secrets.TOMTOM_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          # Selects config/cities/<CITY>.json. Override without touching this
-          # file by setting a repository variable named CITY
-          # (Settings -> Secrets and variables -> Actions -> Variables).
-          CITY: ${{ vars.CITY || 'dar_es_salaam' }}
+          # Selects config/cities/<CITY>.json. Unset resolves to DEFAULT_CITY
+          # in config/city_specs.py; override repo-wide with an Actions
+          # variable named CITY (Settings -> Secrets and variables -> Actions
+          # -> Variables) without editing any file.
+          CITY: ${{ vars.CITY }}
         run: python main.py collect
 
       - name: Log completion

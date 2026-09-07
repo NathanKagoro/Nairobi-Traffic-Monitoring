@@ -30,7 +30,17 @@ CITIES = {
     },
 }
 
-DEFAULT_CITY = "dar_es_salaam"
+# The city collected by default.
+#
+# This project exists to monitor Dar es Salaam, and that remains the goal. It
+# is set to Nairobi because TomTom returned NO_COVERAGE for all 52 Dar es
+# Salaam points on 2026-09-07 - see docs/provider-coverage.md - so pointing the
+# collector at Dar es Salaam produces nothing but failed runs.
+#
+# Change this back to "dar_es_salaam" the moment a provider that covers
+# Tanzania is wired up. Overridable per-run with the CITY environment variable,
+# or repo-wide with an Actions variable named CITY.
+DEFAULT_CITY = "nairobi"
 
 
 def city_spec(name: str) -> dict:
